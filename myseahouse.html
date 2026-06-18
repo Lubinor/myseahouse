@@ -246,8 +246,8 @@
 <header>
   <h1 id="gh-title">🏡 Квартира</h1>
   <div class="hdr-btns">
+    <button class="hdr-btn" onclick="driveDownload()" id="btn-download" title="Свали последните промени от Drive">⬇ Свали</button>
     <button class="hdr-btn" onclick="openDriveModal()">☁ Drive</button>
-    <button class="hdr-btn" onclick="syncNow()">↻ Синх.</button>
   </div>
 </header>
 
@@ -627,6 +627,7 @@ function init(){
   calcRevenue();
   updateDriveStatus();
   startAutoSync();
+
 }
 
 /* ═══════════════ CALENDAR ══════════════════════════════════ */
@@ -803,7 +804,7 @@ function saveRes(){
   } else {
     state.reservations.push(entry);
   }
-  save();renderCalendar();calcRevenue();closeResModal();
+  save();driveUploadAuto();renderCalendar();calcRevenue();closeResModal();
   showToast('Резервацията е запазена ✓');
 }
 
@@ -811,7 +812,7 @@ function deleteRes(){
   if(!editingId) return;
   if(!confirm('Изтриване на резервацията?')) return;
   state.reservations=state.reservations.filter(r=>r.id!==editingId);
-  save();renderCalendar();calcRevenue();closeResModal();
+  save();driveUploadAuto();renderCalendar();calcRevenue();closeResModal();
   showToast('Резервацията е изтрита');
 }
 
@@ -843,13 +844,13 @@ function saveRooms(){
     if(p) r.defaultPrice=parseFloat(p.value)||0;
   });
   state.settingsModified=Date.now();
-  save();renderCalendar();showToast('Стаите са запазени ✓');
+  save();driveUploadAuto();renderCalendar();showToast('Стаите са запазени ✓');
 }
 
 function saveGHName(){
   state.guesthouseName=document.getElementById('gh-name-input').value.trim()||'Квартира';
   state.settingsModified=Date.now();
-  updateTitle();save();showToast('Името е запазено ✓');
+  updateTitle();save();driveUploadAuto();showToast('Името е запазено ✓');
 }
 
 function updateTitle(){
@@ -861,7 +862,7 @@ function quickRename(id){
   const r=state.rooms.find(x=>x.id===id);
   if(!r) return;
   const n=prompt('Ново име:',r.name);
-  if(n!==null&&n.trim()){r.name=n.trim();save();renderCalendar();renderRooms();showToast('Преименувано ✓');}
+  if(n!==null&&n.trim()){r.name=n.trim();save();driveUploadAuto();renderCalendar();renderRooms();showToast('Преименувано ✓');}
 }
 
 /* ═══════════════ REVENUE ════════════════════════════════════ */
@@ -915,7 +916,10 @@ function switchTab(name,el){
   if(name==='settings') renderRooms();
 }
 
-/* ═══════════════ DRIVE ══════════════════════════════════════ */
+/* ═══════════════ DRIVE ══════════════════════════════════════
+   Upload on every save. Manual download button on header.
+   Token obtained once per session via Google popup.
+═══════════════════════════════════════════════════════════ */
 function openDriveModal(){
   document.getElementById('drive-cid').value=state.driveConfig.clientId||'';
   document.getElementById('drive-fname').value=state.driveConfig.filename||'guesthouse-data.json';
@@ -927,108 +931,100 @@ function saveDriveConfig(){
   state.driveConfig.clientId=document.getElementById('drive-cid').value.trim();
   state.driveConfig.filename=document.getElementById('drive-fname').value.trim()||'guesthouse-data.json';
   save();closeDriveModal();
-  if(state.driveConfig.clientId) initGoogleAuth();
+  if(state.driveConfig.clientId) ensureToken(()=>showToast('Drive свързан ✓'));
 }
 
-function initGoogleAuth(){
-  if(!state.driveConfig.clientId) return;
-  if(!document.getElementById('gsi-script')){
-    const s=document.createElement('script');
-    s.id='gsi-script';s.src='https://accounts.google.com/gsi/client';
-    s.onload=()=>doGoogleSignIn();document.head.appendChild(s);
-  } else { doGoogleSignIn(); }
-}
+/* ensureToken(cb) — gets a valid token then calls cb().
+   First call this session: shows Google account picker once.
+   All subsequent calls: instant, no popup, token reused. */
+let tokenClient=null;
+let pendingCbs=[];
 
-function doGoogleSignIn(){
-  try{
-    const client=google.accounts.oauth2.initTokenClient({
-      client_id:state.driveConfig.clientId,
-      scope:'https://www.googleapis.com/auth/drive.file',
-      callback:(resp)=>{
-        if(resp.error){showToast('Грешка при Google Auth');return;}
-        driveToken=resp.access_token;
-        state.driveConfig.connected=true;
-        save();updateDriveStatus();showToast('Drive свързан ✓');syncNow();
-      }
-    });
-    client.requestAccessToken();
-  }catch(e){showToast('Google Auth грешка: '+e.message);}
-}
-
-async function syncNow(){
-  if(!driveToken){
-    if(state.driveConfig.clientId) initGoogleAuth();
-    else{updateSyncBar('local','Само локално','');showToast('Drive не е настроен.');}
+function ensureToken(cb){
+  if(!state.driveConfig.clientId){
+    showToast('Drive не е настроен — отиди в ⚙ Настройки.');
     return;
   }
-  updateSyncBar('pending','Синхронизиране...','');
-  try{
-    await driveBidirectionalSync();
-    const n=new Date();
-    updateSyncBar('ok','Синхронизирано',n.toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'}));
-    showToast('Синхронизирано с Drive ✓');
-  }catch(e){updateSyncBar('error','Грешка при синхр.','');showToast('Грешка: '+e.message);}
+  if(driveToken){ cb(); return; } // already have token
+  if(cb) pendingCbs.push(cb);
+  if(pendingCbs.length>1) return; // already waiting for auth
+
+  function doAuth(){
+    if(!tokenClient){
+      tokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:state.driveConfig.clientId,
+        scope:'https://www.googleapis.com/auth/drive.file',
+        callback:(resp)=>{
+          if(resp.error){ showToast('Google Auth грешка'); pendingCbs=[]; return; }
+          driveToken=resp.access_token;
+          state.driveConfig.connected=true;
+          save(); updateDriveStatus();
+          // Token expires in 1h — clear it so next save re-auths automatically
+          setTimeout(()=>{ driveToken=null; tokenClient=null; }, 55*60*1000);
+          const cbs=pendingCbs.splice(0);
+          cbs.forEach(f=>f());
+        }
+      });
+    }
+    tokenClient.requestAccessToken();
+  }
+
+  if(!document.getElementById('gsi-script')){
+    const s=document.createElement('script');
+    s.id='gsi-script'; s.src='https://accounts.google.com/gsi/client';
+    s.onload=doAuth; document.head.appendChild(s);
+  } else { doAuth(); }
 }
 
-async function driveBidirectionalSync(){
-  // 1. Find file in Drive
+/* driveUploadAuto — called after every save operation silently */
+function driveUploadAuto(){
+  if(!state.driveConfig.clientId) return;
+  ensureToken(async()=>{
+    try{
+      await driveWriteFile();
+      const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
+      updateSyncBar('ok','Запазено в Drive',t);
+    }catch(e){ updateSyncBar('error','Грешка при запис',''); }
+  });
+}
+
+/* driveDownload — manual button, pulls latest state from Drive */
+async function driveDownload(){
+  if(!state.driveConfig.clientId){
+    showToast('Drive не е настроен — отиди в ⚙ Настройки.');
+    return;
+  }
+  ensureToken(async()=>{
+    updateSyncBar('pending','Изтегляне от Drive...','');
+    try{
+      const search=await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
+        {headers:{'Authorization':'Bearer '+driveToken}});
+      const sd=await search.json();
+      const files=sd.files||[];
+      if(!files.length){ showToast('Няма файл в Drive.'); updateSyncBar('local','Няма данни в Drive',''); return; }
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${files[0].id}?alt=media`,
+        {headers:{'Authorization':'Bearer '+driveToken}});
+      if(!r.ok) throw new Error(await r.text());
+      const remote=await r.json();
+      remote.driveConfig=state.driveConfig;
+      Object.assign(state,remote);
+      localStorage.setItem('gh_state',JSON.stringify(state));
+      renderCalendar();renderRooms();updateTitle();calcRevenue();
+      const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
+      updateSyncBar('ok','Изтеглено от Drive',t);
+      showToast('Данните са обновени ⬇');
+    }catch(e){ updateSyncBar('error','Грешка при изтегляне',''); showToast('Грешка: '+e.message); }
+  });
+}
+
+async function driveWriteFile(){
   const search=await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id,modifiedTime)`,
+    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
     {headers:{'Authorization':'Bearer '+driveToken}});
   const sd=await search.json();
   const files=sd.files||[];
-
-  if(files.length===0){
-    // No file in Drive yet — first device, just upload
-    await driveWriteFile(null);
-    return;
-  }
-
-  const fileId=files[0].id;
-  const driveModified=new Date(files[0].modifiedTime).getTime();
-  const localModified=state.lastModified||0;
-
-  if(driveModified>localModified){
-    // Drive is newer — download remote, merge local changes on top, upload result
-    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      {headers:{'Authorization':'Bearer '+driveToken}});
-    if(!r.ok) throw new Error(await r.text());
-    const remote=await r.json();
-
-    // Merge strategy:
-    // - Reservations: union by id (remote + any local-only ones)
-    // - Settings (name, rooms, driveConfig): whichever was modified more recently
-    const remoteResIds=new Set((remote.reservations||[]).map(r=>r.id));
-    const localOnlyRes=(state.reservations||[]).filter(r=>!remoteResIds.has(r.id));
-    const mergedRes=[...(remote.reservations||[]),...localOnlyRes];
-
-    // Take remote as base, overlay local settings only if local is newer
-    const merged=Object.assign({},remote);
-    merged.reservations=mergedRes;
-    merged.lastModified=Date.now();
-
-    // If local has newer room/name changes, keep those
-    if((state.settingsModified||0)>(remote.settingsModified||0)){
-      merged.guesthouseName=state.guesthouseName;
-      merged.rooms=state.rooms;
-      merged.settingsModified=state.settingsModified;
-    }
-
-    merged.driveConfig=state.driveConfig; // always keep local drive config
-    Object.assign(state,merged);
-    localStorage.setItem('gh_state',JSON.stringify(state));
-    renderCalendar();renderRooms();updateTitle();calcRevenue();
-    // Upload the merged result so other devices get it
-    await driveWriteFile(fileId);
-  } else {
-    // Local is newer — upload
-    await driveWriteFile(fileId);
-  }
-}
-
-async function driveWriteFile(fileId){
-  state.lastModified=Date.now();
-  localStorage.setItem('gh_state',JSON.stringify(state));
+  const fileId=files.length?files[0].id:null;
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const form=new FormData();
   form.append('metadata',new Blob([JSON.stringify({name:state.driveConfig.filename})],{type:'application/json'}));
@@ -1044,10 +1040,8 @@ async function driveWriteFile(fileId){
   }
 }
 
-function startAutoSync(){
-  clearInterval(autoSyncTimer);
-  autoSyncTimer=setInterval(()=>{ if(driveToken) syncNow(); },60000);
-}
+function startAutoSync(){ /* intentionally empty — upload on save, download on demand */ }
+
 
 function updateDriveStatus(){
   const ok=state.driveConfig.connected&&driveToken;
