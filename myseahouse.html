@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Квартира — Резервации</title>
+<style>
+  :root {
+    --bg:#F7F5F0; --surface:#FFFFFF; --border:#DDD8CF;
+    --text:#1A1714; --muted:#7A746B;
+    --accent:#2A6B4F; --accent-lt:#EAF3EE;
+    --warn:#C0392B; --warn-lt:#FDECEA;
+    --r0:#3B82F6; --r0t:#DBEAFE; --r1:#F59E0B; --r1t:#FEF3C7;
+    --r2:#8B5CF6; --r2t:#EDE9FE; --r3:#EF4444; --r3t:#FEE2E2;
+    --r4:#10B981; --r4t:#D1FAE5; --r5:#F97316; --r5t:#FFEDD5;
+    --r6:#EC4899; --r6t:#FCE7F3; --r7:#6366F1; --r7t:#E0E7FF;
+    --radius:6px; --font:'Segoe UI',system-ui,sans-serif;
+    --cell-w:38px; --cell-h:44px; --room-col:120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);font-family:var(--font);color:var(--text);min-height:100vh;}
+
+  /* HEADER */
+  header{background:var(--accent);color:#fff;padding:0 16px;display:flex;align-items:center;
+    justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;
+    box-shadow:0 2px 6px rgba(0,0,0,.2);}
+  header h1{font-size:1.1rem;font-weight:700;letter-spacing:.02em;}
+  .hdr-btns{display:flex;gap:8px;}
+  .hdr-btn{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:var(--radius);
+    padding:6px 12px;font-size:.82rem;cursor:pointer;white-space:nowrap;font-family:var(--font);}
+  .hdr-btn:hover{background:rgba(255,255,255,.28);}
+
+  /* TABS */
+  .tabs{display:flex;background:var(--surface);border-bottom:2px solid var(--border);
+    position:sticky;top:52px;z-index:90;}
+  .tab{flex:1;padding:10px 4px;text-align:center;font-size:.83rem;font-weight:600;
+    color:var(--muted);cursor:pointer;border:none;background:none;font-family:var(--font);
+    border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  /* VIEWS */
+  .view{display:none;padding:12px;} .view.active{display:block;}
+
+  /* MONTH NAV */
+  .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .month-nav h2{font-size:1rem;font-weight:700;text-transform:capitalize;}
+  .nav-arrow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    width:34px;height:34px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;color:var(--text);}
+  .nav-arrow:hover{background:var(--accent-lt);}
+
+  /* CALENDAR */
+  .cal-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .cal-table{border-collapse:collapse;min-width:max-content;}
+  .cal-table thead th{background:var(--surface);border:1px solid var(--border);
+    font-size:.72rem;font-weight:700;color:var(--muted);width:var(--cell-w);min-width:var(--cell-w);
+    height:28px;text-align:center;position:sticky;top:0;z-index:10;padding:0;}
+  .cal-table thead th.today-hdr{color:var(--accent);background:var(--accent-lt);}
+  .cal-table thead th.wknd-hdr{color:var(--warn);background:#FEF9F9;}
+  .cal-table thead th:first-child{width:var(--room-col);min-width:var(--room-col);
+    left:0;z-index:20;background:var(--surface);}
+  .cal-table tbody td.room-cell{position:sticky;left:0;z-index:5;background:var(--surface);
+    border:1px solid var(--border);padding:4px 8px;font-size:.8rem;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:var(--room-col);cursor:pointer;}
+  .cal-table tbody td.room-cell:hover{background:var(--accent-lt);}
+  .cal-table tbody td.day-cell{border:1px solid var(--border);width:var(--cell-w);
+    min-width:var(--cell-w);height:var(--cell-h);cursor:pointer;vertical-align:middle;
+    padding:0;position:relative;background:var(--surface);}
+  .cal-table tbody td.day-cell:hover{filter:brightness(.94);}
+  .cal-table tbody td.day-cell.today{outline:2px inset var(--accent);outline-offset:-2px;}
+  .cal-table tbody td.day-cell.weekend{background:#FAFAF7;}
+
+  /* RESERVATION BLOCKS */
+  .res-block{position:absolute;inset:2px;border-radius:3px;display:flex;align-items:center;
+    font-size:.65rem;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 3px;
+    cursor:pointer;z-index:2;border:1.5px solid transparent;}
+  .res-block.span-start{border-radius:3px 0 0 3px;justify-content:flex-start;}
+  .res-block.span-mid{border-radius:0;}
+  .res-block.span-end{border-radius:0 3px 3px 0;justify-content:flex-end;}
+  .res-block.span-only{border-radius:3px;justify-content:center;}
+
+  /* MODAL */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
+    align-items:center;justify-content:center;padding:16px;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:10px;padding:20px;width:100%;max-width:420px;
+    box-shadow:0 8px 32px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto;}
+  .modal h3{font-size:1rem;margin-bottom:14px;color:var(--accent);}
+  .form-row{margin-bottom:12px;}
+  .form-row label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:var(--muted);}
+  .form-row input,.form-row select{width:100%;border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:8px 10px;font-size:.9rem;font-family:var(--font);
+    background:var(--bg);color:var(--text);}
+  .form-row input:focus,.form-row select:focus{outline:none;border-color:var(--accent);}
+  .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .btn{padding:8px 18px;border-radius:var(--radius);border:none;font-size:.88rem;
+    font-weight:600;cursor:pointer;font-family:var(--font);}
+  .btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{filter:brightness(1.1);}
+  .btn-ghost{background:var(--border);color:var(--text);} .btn-ghost:hover{background:#ccc;}
+  .btn-danger{background:var(--warn-lt);color:var(--warn);border:1px solid var(--warn);}
+  .btn-danger:hover{background:var(--warn);color:#fff;}
+
+  /* COLOR SWATCHES */
+  .color-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;
+    border:3px solid transparent;transition:transform .1s;}
+  .color-swatch.selected{border-color:var(--text);transform:scale(1.15);}
+
+  /* ── CUSTOM DATE PICKER ──────────────────────────────── */
+  .dp-wrap{position:relative;}
+  .dp-input{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);
+    padding:8px 10px;font-size:.9rem;font-family:var(--font);background:var(--bg);
+    color:var(--text);cursor:pointer;display:flex;align-items:center;
+    justify-content:space-between;user-select:none;min-height:38px;}
+  .dp-input.open{border-color:var(--accent);}
+  .dp-placeholder{color:var(--muted);font-size:.85rem;}
+  .dp-popup{display:none;position:fixed;background:var(--surface);
+    border:1.5px solid var(--border);border-radius:8px;
+    box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:500;width:252px;padding:10px;}
+  .dp-popup.open{display:block;}
+  .dp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .dp-hdr strong{font-size:.88rem;}
+  .dp-nav{background:none;border:1px solid var(--border);border-radius:4px;width:26px;
+    height:26px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;
+    justify-content:center;color:var(--text);}
+  .dp-nav:hover{background:var(--accent-lt);}
+  .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .dp-dow{font-size:.65rem;font-weight:700;color:var(--muted);text-align:center;padding:3px 0;}
+  .dp-dow.w{color:var(--warn);}
+  .dp-day{font-size:.78rem;text-align:center;padding:5px 2px;border-radius:4px;
+    cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--text);
+    width:100%;}
+  .dp-day:hover:not(.om){background:var(--accent-lt);}
+  .dp-day.tod{font-weight:800;color:var(--accent);}
+  .dp-day.sel{background:var(--accent)!important;color:#fff!important;border-radius:4px;}
+  .dp-day.w:not(.sel){color:var(--warn);}
+  .dp-day.om{color:#ccc;cursor:default;pointer-events:none;}
+
+  /* ROOMS SETTINGS */
+  .room-list{display:flex;flex-direction:column;gap:8px;}
+  .room-item{display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+  .room-item input{flex:1;border:1.5px solid var(--border);border-radius:4px;
+    padding:6px 8px;font-size:.88rem;font-family:var(--font);background:var(--bg);}
+  .room-item input:focus{outline:none;border-color:var(--accent);}
+  .price-wrap{display:flex;align-items:center;gap:4px;}
+  .price-wrap span{font-size:.8rem;color:var(--muted);}
+  .price-wrap input{width:72px!important;flex:none!important;}
+
+  /* REVENUE */
+  .rev-controls{background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:14px;margin-bottom:14px;}
+  .rev-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px;}
+  .rev-row .form-row{margin:0;flex:1;min-width:140px;}
+  .rev-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  .rev-table th,.rev-table td{border:1px solid var(--border);padding:8px 10px;text-align:right;}
+  .rev-table th{background:var(--accent);color:#fff;font-size:.78rem;}
+  .rev-table td:first-child,.rev-table th:first-child{text-align:left;}
+  .rev-table tr:nth-child(even) td{background:var(--accent-lt);}
+  .rev-table tr.tot td{font-weight:700;background:var(--bg);}
+  .rev-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .rev-card{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:12px 14px;}
+  .rev-card .lbl{font-size:.75rem;color:var(--muted);margin-bottom:4px;}
+  .rev-card .val{font-size:1.3rem;font-weight:800;color:var(--accent);}
+
+  /* DRIVE SETUP */
+  .drive-setup{background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+  .drive-setup h4{margin-bottom:10px;color:var(--accent);}
+  .drive-setup p{font-size:.83rem;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+  .drive-status{display:flex;align-items:center;gap:8px;font-size:.83rem;margin-top:8px;}
+
+  /* SYNC BAR */
+  .sync-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+    border-top:1px solid var(--border);padding:6px 14px;font-size:.76rem;color:var(--muted);
+    display:flex;align-items:center;justify-content:space-between;z-index:80;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+  .sync-dot.ok{background:#10B981;} .sync-dot.pending{background:#F59E0B;}
+  .sync-dot.error{background:var(--warn);} .sync-dot.local{background:var(--muted);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+    background:#1A1714;color:#fff;padding:10px 18px;border-radius:20px;font-size:.85rem;
+    z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+
+  @media(max-width:520px){
+    :root{--cell-w:32px;--cell-h:40px;--room-col:90px;}
+    .res-block{font-size:.58rem;} .modal{padding:16px;}
+    header h1{font-size:.95rem;} .hdr-btn{padding:5px 8px;font-size:.75rem;}
+  }
+
+  /* PIN LOCK SCREEN */
+  #pin-screen{position:fixed;inset:0;background:var(--accent);z-index:9999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+  #pin-screen h2{color:#fff;font-size:1.3rem;font-weight:700;letter-spacing:.04em;}
+  #pin-screen p{color:rgba(255,255,255,.7);font-size:.85rem;margin-top:-12px;}
+  .pin-dots{display:flex;gap:14px;margin:4px 0;}
+  .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.6);
+    background:transparent;transition:background .15s;}
+  .pin-dot.filled{background:#fff;border-color:#fff;}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px;}
+  .pin-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:10px;
+    height:60px;font-size:1.4rem;font-weight:600;cursor:pointer;font-family:var(--font);
+    transition:background .1s;}
+  .pin-btn:hover{background:rgba(255,255,255,.28);}
+  .pin-btn:active{background:rgba(255,255,255,.4);}
+  .pin-btn.wide{grid-column:span 2;}
+  .pin-error{color:#FBBF24;font-size:.82rem;font-weight:600;min-height:18px;
+    text-align:center;animation:shake .3s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+</style>
+</head>
+<body>
+
+<!-- PIN LOCK -->
+<div id="pin-screen">
+  <h2>🏡 Квартира</h2>
+  <p>Въведете PIN за достъп</p>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn" onclick="pinClear()">⌫</button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn" onclick="pinClear()">✕</button>
+  </div>
+</div>
+
+<header>
+  <h1 id="gh-title">🏡 Квартира</h1>
+  <div class="hdr-btns">
+    <button class="hdr-btn" onclick="openDriveModal()">☁ Drive</button>
+    <button class="hdr-btn" onclick="syncNow()">↻ Синх.</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('calendar',this)">📅 Календар</button>
+  <button class="tab" onclick="switchTab('revenue',this)">💶 Приходи</button>
+  <button class="tab" onclick="switchTab('settings',this)">⚙ Настройки</button>
+</div>
+
+<!-- CALENDAR -->
+<div id="view-calendar" class="view active">
+  <div class="month-nav">
+    <button class="nav-arrow" onclick="changeMonth(-1)">‹</button>
+    <h2 id="month-label"></h2>
+    <button class="nav-arrow" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="cal-wrap">
+    <table class="cal-table"><thead id="cal-head"></thead><tbody id="cal-body"></tbody></table>
+  </div>
+  <p style="font-size:.74rem;color:var(--muted);margin-top:8px;padding-bottom:44px;">
+    Натиснете върху ден за нова резервация. Натиснете върху резервация за редакция.
+  </p>
+</div>
+
+<!-- REVENUE -->
+<div id="view-revenue" class="view">
+  <div class="rev-controls">
+    <strong style="font-size:.88rem;">Период за справка</strong>
+    <div class="rev-row">
+      <div class="form-row">
+        <label>От</label>
+        <div class="dp-wrap" id="dp-rev-from-wrap"></div>
+      </div>
+      <div class="form-row">
+        <label>До</label>
+        <div class="dp-wrap" id="dp-rev-to-wrap"></div>
+      </div>
+    </div>
+  </div>
+  <div class="rev-summary" id="rev-summary"></div>
+  <div style="overflow-x:auto;">
+    <table class="rev-table" id="rev-table"></table>
+  </div>
+  <p style="font-size:.74rem;color:var(--muted);margin-top:10px;padding-bottom:44px;">
+    Приходите се изчисляват на база цена × брой нощувки за всяка резервация.
+  </p>
+</div>
+
+<!-- SETTINGS -->
+<div id="view-settings" class="view">
+  <div style="margin-bottom:14px;">
+    <strong style="font-size:.88rem;">Име на обекта</strong>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <input type="text" id="gh-name-input" placeholder="напр. Семеен хотел Роза"
+        style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:.9rem;font-family:var(--font);background:var(--bg);">
+      <button class="btn btn-primary" onclick="saveGHName()">Запази</button>
+    </div>
+  </div>
+  <strong style="font-size:.88rem;display:block;margin-bottom:8px;">Стаи и цени</strong>
+  <div class="room-list" id="room-list"></div>
+  <div style="margin-top:10px;">
+    <button class="btn btn-primary" onclick="saveRooms()">💾 Запази стаи</button>
+  </div>
+  <div class="drive-setup" style="margin-top:18px;">
+    <h4>☁ Google Drive синхронизация</h4>
+    <p>За синхронизация с телефона свържете Google Drive. Данните се записват автоматично.</p>
+    <button class="btn btn-primary" onclick="openDriveModal()">Настрой Drive</button>
+    <div class="drive-status">
+      <span class="sync-dot local" id="drive-dot"></span>
+      <span id="drive-text">Не е свързан</span>
+    </div>
+  </div>
+  <div style="margin-top:18px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);">
+    <strong style="font-size:.88rem;display:block;margin-bottom:4px;">Данни (резервации + стаи)</strong>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.4;">
+      JSON файлът съдържа <strong>всичко</strong> — резервации, стаи и настройки. Използвайте го за прехвърляне между устройства.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="exportJSON()">⬇ Изтегли JSON</button>
+      <button class="btn btn-ghost" onclick="importJSON()">⬆ Зареди JSON</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑 Изтрий резервации</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+  </div>
+  <div style="height:50px;"></div>
+</div>
+
+<!-- MODAL: RESERVATION -->
+<div class="overlay" id="res-overlay">
+  <div class="modal">
+    <h3 id="res-title">Нова резервация</h3>
+    <div class="form-row">
+      <label>Стая</label>
+      <select id="res-room"></select>
+    </div>
+    <div class="form-row">
+      <label>Гост</label>
+      <input type="text" id="res-name" placeholder="Иван Иванов">
+    </div>
+    <div class="form-row">
+      <label>Настаняване (вкл.)</label>
+      <div class="dp-wrap" id="dp-res-start-wrap"></div>
+    </div>
+    <div class="form-row">
+      <label>Напускане (изкл.)</label>
+      <div class="dp-wrap" id="dp-res-end-wrap"></div>
+    </div>
+    <div class="form-row">
+      <label>Цена на нощ (€)</label>
+      <input type="number" id="res-price" min="0" step="0.5">
+    </div>
+    <div class="form-row">
+      <label>Цвят</label>
+      <div class="color-grid" id="color-grid"></div>
+    </div>
+    <div class="form-row">
+      <label>Бележки</label>
+      <input type="text" id="res-notes" placeholder="напр. 2 възрастни + 1 дете">
+    </div>
+    <div id="res-preview" style="font-size:.82rem;color:var(--muted);margin-top:4px;min-height:18px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger" id="res-del" onclick="deleteRes()" style="display:none;margin-right:auto;">Изтрий</button>
+      <button class="btn btn-ghost" onclick="closeResModal()">Отказ</button>
+      <button class="btn btn-primary" onclick="saveRes()">Запази</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DRIVE -->
+<div class="overlay" id="drive-overlay">
+  <div class="modal">
+    <h3>☁ Google Drive настройки</h3>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.55;">
+      Въведете само <strong>Client ID</strong> — Client Secret не е нужен.
+      <br><br>
+      ⚠️ <strong>Не използвайте Инкогнито</strong> — OAuth не работи там.
+      <br><br>
+      <strong>Как:</strong> console.cloud.google.com → нов проект → включете Drive API → Credentials → OAuth 2.0 Client ID (Web application) → добавете <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">http://localhost:8080</code> като Authorized JS origin → копирайте Client ID.
+    </p>
+    <div class="form-row">
+      <label>Google Client ID</label>
+      <input type="text" id="drive-cid" placeholder="...apps.googleusercontent.com">
+    </div>
+    <div class="form-row">
+      <label>Файл за данни</label>
+      <input type="text" id="drive-fname" placeholder="guesthouse-data.json">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeDriveModal()">Затвори</button>
+      <button class="btn btn-primary" onclick="saveDriveConfig()">Свържи Drive</button>
+    </div>
+    <hr style="margin:14px 0;border:none;border-top:1px solid var(--border);">
+    <p style="font-size:.78rem;color:var(--muted);">
+      💡 <strong>Без Drive:</strong> използвайте „Изтегли / Зареди JSON" за ръчен трансфер между устройства.
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="sync-bar">
+  <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-text">Само локално</span></div>
+  <span id="sync-time"></span>
+</div>
+
+<script>
+/* ═══════════════ COLORS ════════════════════════════════════ */
+const COLORS=[
+  {id:0,hex:'#3B82F6',tHex:'#DBEAFE'},{id:1,hex:'#F59E0B',tHex:'#FEF3C7'},
+  {id:2,hex:'#8B5CF6',tHex:'#EDE9FE'},{id:3,hex:'#EF4444',tHex:'#FEE2E2'},
+  {id:4,hex:'#10B981',tHex:'#D1FAE5'},{id:5,hex:'#F97316',tHex:'#FFEDD5'},
+  {id:6,hex:'#EC4899',tHex:'#FCE7F3'},{id:7,hex:'#6366F1',tHex:'#E0E7FF'},
+];
+
+/* ═══════════════ STATE ═════════════════════════════════════ */
+let state={
+  guesthouseName:'Квартира',
+  rooms:[],
+  reservations:[],
+  driveConfig:{clientId:'',filename:'guesthouse-data.json',connected:false},
+};
+const DEF_ROOMS=['Стая 1','Стая 2','Стая 3','Стая 4','Стая 5','Стая 6',
+  'Стая 7','Стая 8','Стая 9','Стая 10','Стая 11'];
+
+let curYear=new Date().getFullYear(), curMonth=new Date().getMonth();
+let editingId=null, selColor=0, autoSyncTimer=null, driveToken=null;
+
+/* ═══════════════ CUSTOM DATE PICKER ════════════════════════
+   Each picker = { id, value(ISO), popY, popM, onChange }
+   Rendered into a .dp-wrap container.
+═══════════════════════════════════════════════════════════ */
+const pickers={};  // id → {value, popY, popM, onChange}
+
+// Mon-first week order for the picker grid
+// JS getDay: 0=Sun..6=Sat → reindex Mon=0..Sun=6
+const WKDAYS=['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+const BG_MONTHS_LONG=['Януари','Февруари','Март','Април','Май','Юни',
+  'Юли','Август','Септември','Октомври','Ноември','Декември'];
+
+function jsDay2Mon(jsDay){ return (jsDay+6)%7; } // Mon=0..Sun=6
+function isWknd(jsDay){ return jsDay===0||jsDay===6; }
+
+function createPicker(containerId, placeholder, onChange){
+  const id=containerId;
+  const today=new Date();
+  pickers[id]={value:'', popY:today.getFullYear(), popM:today.getMonth(), onChange};
+  renderPickerInput(id, placeholder);
+}
+
+function renderPickerInput(id, placeholder){
+  const wrap=document.getElementById(id);
+  if(!wrap) return;
+  const p=pickers[id];
+  const display=p.value ? fmtDate(p.value) : '';
+  wrap.innerHTML=`
+    <div class="dp-input${p._open?' open':''}" id="${id}-btn" onclick="togglePicker('${id}',event)">
+      <span>${display||`<span class='dp-placeholder'>${placeholder||'дд/мм/гггг'}</span>`}</span>
+      <span style="font-size:.7rem;color:var(--muted);">▼</span>
+    </div>
+    <div class="dp-popup${p._open?' open':''}" id="${id}-pop"></div>
+  `;
+  if(p._open) renderPickerGrid(id);
+}
+
+function renderPickerGrid(id){
+  const p=pickers[id];
+  const pop=document.getElementById(id+'-pop');
+  if(!pop) return;
+  const y=p.popY, m=p.popM;
+  const today=new Date();
+  const todayStr=iso(today.getFullYear(),today.getMonth()+1,today.getDate());
+
+  // Day headers Mon..Sun
+  let html=`<div class="dp-hdr">
+    <button class="dp-nav" onclick="pickerNav('${id}',-1,event)">‹</button>
+    <strong>${BG_MONTHS_LONG[m]} ${y}</strong>
+    <button class="dp-nav" onclick="pickerNav('${id}',1,event)">›</button>
+  </div><div class="dp-grid">`;
+  WKDAYS.forEach((d,i)=>{ html+=`<div class="dp-dow${i>=5?' w':''}">${d}</div>`; });
+
+  // First day of month (JS): getDay() → Mon-first offset
+  const firstJS=new Date(y,m,1).getDay();
+  const offset=jsDay2Mon(firstJS); // blanks before day 1
+  const daysInMonth=new Date(y,m+1,0).getDate();
+
+  for(let i=0;i<offset;i++) html+=`<span></span>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=iso(y,m+1,d);
+    const jsD=new Date(y,m,d).getDay();
+    const wk=isWknd(jsD);
+    let cls='dp-day';
+    if(ds===todayStr) cls+=' tod';
+    if(ds===p.value) cls+=' sel';
+    if(wk) cls+=' w';
+    html+=`<button class="${cls}" onclick="pickDay('${id}','${ds}',event)">${d}</button>`;
+  }
+  html+=`</div>`;
+  pop.innerHTML=html;
+}
+
+function togglePicker(id,e){
+  e.stopPropagation();
+  const p=pickers[id];
+  const wasOpen=p._open;
+  // close all
+  Object.keys(pickers).forEach(k=>{ if(pickers[k]._open){ pickers[k]._open=false; rerenderPickerInput(k); }});
+  if(!wasOpen){ p._open=true; rerenderPickerInput(id); }
+}
+
+function rerenderPickerInput(id){
+  const wrap=document.getElementById(id);
+  if(!wrap) return;
+  const p=pickers[id];
+  const btn=document.getElementById(id+'-btn');
+  const pop=document.getElementById(id+'-pop');
+  if(btn){
+    const display=p.value?fmtDate(p.value):'';
+    btn.innerHTML=`<span>${display||`<span class='dp-placeholder'>дд/мм/гггг</span>`}</span><span style="font-size:.7rem;color:var(--muted);">▼</span>`;
+    btn.classList.toggle('open',!!p._open);
+  }
+  if(pop){
+    pop.classList.toggle('open',!!p._open);
+    if(p._open) renderPickerGrid(id);
+    else pop.innerHTML='';
+  }
+  // position popup below input
+  if(p._open && btn && pop){
+    const rect=btn.getBoundingClientRect();
+    pop.style.top=(rect.bottom+window.scrollY+4)+'px';
+    pop.style.left=(rect.left+window.scrollX)+'px';
+    // keep on screen
+    setTimeout(()=>{
+      const pr=pop.getBoundingClientRect();
+      if(pr.right>window.innerWidth-8) pop.style.left=(window.innerWidth-pr.width-8)+'px';
+    },0);
+  }
+}
+
+function pickerNav(id,delta,e){
+  e.stopPropagation();
+  const p=pickers[id];
+  p.popM+=delta;
+  if(p.popM>11){p.popM=0;p.popY++;}
+  if(p.popM<0){p.popM=11;p.popY--;}
+  renderPickerGrid(id);
+}
+
+function pickDay(id,ds,e){
+  e.stopPropagation();
+  const p=pickers[id];
+  p.value=ds;
+  // navigate popup to selected month
+  const [y,m]=ds.split('-').map(Number);
+  p.popY=y; p.popM=m-1;
+  p._open=false;
+  rerenderPickerInput(id);
+  if(p.onChange) p.onChange(ds);
+}
+
+function setPickerValue(id,isoStr){
+  const p=pickers[id];
+  if(!p) return;
+  p.value=isoStr||'';
+  if(isoStr){const[y,m]=isoStr.split('-').map(Number);p.popY=y;p.popM=m-1;}
+  rerenderPickerInput(id);
+}
+
+function getPickerValue(id){ return pickers[id]?pickers[id].value:''; }
+
+// close pickers when clicking outside
+document.addEventListener('click',()=>{
+  let any=false;
+  Object.keys(pickers).forEach(k=>{ if(pickers[k]._open){pickers[k]._open=false;any=true;} });
+  if(any) Object.keys(pickers).forEach(k=>rerenderPickerInput(k));
+});
+
+/* ═══════════════ UTILS ═════════════════════════════════════ */
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escA(s){return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function iso(y,m,d){return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function daysBetween(a,b){return Math.round((b-a)/86400000);}
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+
+/* ═══════════════ STORAGE ═══════════════════════════════════ */
+function save(){
+  localStorage.setItem('gh_state',JSON.stringify(state));
+  updateSyncBar('pending','Несинхронизирано','');
+}
+function load(){
+  const r=localStorage.getItem('gh_state');
+  if(r){try{Object.assign(state,JSON.parse(r));}catch(e){}}
+}
+
+/* ═══════════════ INIT ══════════════════════════════════════ */
+function init(){
+  load();
+  if(!state.rooms.length)
+    state.rooms=DEF_ROOMS.map((n,i)=>({id:i,name:n,defaultPrice:50}));
+
+  // Create pickers
+  createPicker('dp-res-start-wrap','дд/мм/гггг',()=>updateResPreview());
+  createPicker('dp-res-end-wrap','дд/мм/гггг',()=>updateResPreview());
+  const now=new Date();
+  const firstOfMonth=iso(now.getFullYear(),now.getMonth()+1,1);
+  const lastOfMonth=iso(now.getFullYear(),now.getMonth()+1,daysInMonth(now.getFullYear(),now.getMonth()));
+  createPicker('dp-rev-from-wrap','дд/мм/гггг',()=>calcRevenue());
+  createPicker('dp-rev-to-wrap','дд/мм/гггг',()=>calcRevenue());
+  setPickerValue('dp-rev-from-wrap',firstOfMonth);
+  setPickerValue('dp-rev-to-wrap',lastOfMonth);
+
+  renderCalendar();
+  renderRooms();
+  setupColors();
+  updateTitle();
+  calcRevenue();
+  updateDriveStatus();
+  startAutoSync();
+}
+
+/* ═══════════════ CALENDAR ══════════════════════════════════ */
+const MONTHS=['Януари','Февруари','Март','Април','Май','Юни',
+  'Юли','Август','Септември','Октомври','Ноември','Декември'];
+// day-of-week labels in Mon-first order for the *calendar grid header*
+// (columns are just dates 1..31, so we just label each date with its DOW)
+const DOW_SHORT=['Нд','Пн','Вт','Ср','Чт','Пт','Сб']; // indexed by JS getDay()
+
+function renderCalendar(){
+  const days=daysInMonth(curYear,curMonth);
+  const today=new Date();
+  const todayStr=iso(today.getFullYear(),today.getMonth()+1,today.getDate());
+  document.getElementById('month-label').textContent=`${MONTHS[curMonth]} ${curYear}`;
+
+  // HEAD — columns are calendar days; label each with day-of-week
+  let hHTML='<tr><th>Стая</th>';
+  for(let d=1;d<=days;d++){
+    const jsD=new Date(curYear,curMonth,d).getDay();
+    const ds=iso(curYear,curMonth+1,d);
+    const wk=isWknd(jsD);
+    hHTML+=`<th class="${ds===todayStr?'today-hdr':''}${wk?' wknd-hdr':''}">${d}<br>
+      <span style="font-weight:400;font-size:.62rem;">${DOW_SHORT[jsD]}</span></th>`;
+  }
+  hHTML+='</tr>';
+  document.getElementById('cal-head').innerHTML=hHTML;
+
+  // Reservation map
+  const rMap={};
+  state.reservations.forEach(res=>{
+    const s=parseDate(res.startDate),e=parseDate(res.endDate);
+    let cur=new Date(s),pos=0;
+    const total=daysBetween(s,e);
+    while(cur<e){
+      const ds=iso(cur.getFullYear(),cur.getMonth()+1,cur.getDate());
+      let sp=total===1?'only':pos===0?'start':pos===total-1?'end':'mid';
+      rMap[`${res.roomId}-${ds}`]={res,sp};
+      cur.setDate(cur.getDate()+1);pos++;
+    }
+  });
+
+  // BODY
+  let bHTML='';
+  state.rooms.forEach(room=>{
+    bHTML+=`<tr><td class="room-cell" onclick="quickRename(${room.id})" title="Натиснете за преименуване">${esc(room.name)}</td>`;
+    for(let d=1;d<=days;d++){
+      const jsD=new Date(curYear,curMonth,d).getDay();
+      const ds=iso(curYear,curMonth+1,d);
+      const wk=isWknd(jsD);
+      const key=`${room.id}-${ds}`;
+      const re=rMap[key];
+      let cls=`day-cell${ds===todayStr?' today':''}${wk?' weekend':''}`;
+      let inner='';
+      if(re){
+        const c=COLORS[re.res.colorId%COLORS.length];
+        const showName=re.sp==='start'||re.sp==='only';
+        inner=`<div class="res-block span-${re.sp}"
+          style="background:${c.tHex};color:${c.hex};border-color:${c.hex};"
+          onclick="event.stopPropagation();openEditRes('${re.res.id}')"
+          title="${escA(re.res.guestName)}">${showName?esc(re.res.guestName):''}</div>`;
+      }
+      bHTML+=`<td class="${cls}" onclick="openNewRes(${room.id},'${ds}')">${inner}</td>`;
+    }
+    bHTML+='</tr>';
+  });
+  document.getElementById('cal-body').innerHTML=bHTML;
+}
+
+function changeMonth(d){
+  curMonth+=d;
+  if(curMonth>11){curMonth=0;curYear++;}
+  if(curMonth<0){curMonth=11;curYear--;}
+  renderCalendar();
+}
+
+/* ═══════════════ RESERVATION MODAL ════════════════════════ */
+function setupColors(){
+  document.getElementById('color-grid').innerHTML=COLORS.map(c=>
+    `<div class="color-swatch${c.id===selColor?' selected':''}"
+      style="background:${c.hex};" onclick="pickColor(${c.id})" data-c="${c.id}"></div>`
+  ).join('');
+}
+
+function pickColor(id){
+  selColor=id;
+  document.querySelectorAll('.color-swatch').forEach(el=>
+    el.classList.toggle('selected',parseInt(el.dataset.c)===id));
+}
+
+function openNewRes(roomId,ds){
+  editingId=null;
+  document.getElementById('res-title').textContent='Нова резервация';
+  document.getElementById('res-del').style.display='none';
+  fillRoomSel(roomId);
+  document.getElementById('res-name').value='';
+  setPickerValue('dp-res-start-wrap',ds);
+  setPickerValue('dp-res-end-wrap',ds);
+  const room=state.rooms.find(r=>r.id===roomId);
+  document.getElementById('res-price').value=room?room.defaultPrice:50;
+  document.getElementById('res-notes').value='';
+  pickColor(nextColor(roomId));
+  updateResPreview();
+  document.getElementById('res-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('res-name').focus(),50);
+}
+
+function openEditRes(resId){
+  const res=state.reservations.find(r=>r.id===resId);
+  if(!res) return;
+  editingId=resId;
+  document.getElementById('res-title').textContent='Редактирай резервация';
+  document.getElementById('res-del').style.display='inline-flex';
+  fillRoomSel(res.roomId);
+  document.getElementById('res-room').value=res.roomId;
+  document.getElementById('res-name').value=res.guestName;
+  setPickerValue('dp-res-start-wrap',res.startDate);
+  setPickerValue('dp-res-end-wrap',res.endDate);
+  document.getElementById('res-price').value=res.pricePerNight;
+  document.getElementById('res-notes').value=res.notes||'';
+  pickColor(res.colorId);
+  updateResPreview();
+  document.getElementById('res-overlay').classList.add('open');
+}
+
+function fillRoomSel(selId){
+  document.getElementById('res-room').innerHTML=state.rooms.map(r=>
+    `<option value="${r.id}"${r.id===selId?' selected':''}>${esc(r.name)}</option>`).join('');
+}
+
+function closeResModal(){
+  document.getElementById('res-overlay').classList.remove('open');
+  editingId=null;
+}
+
+function updateResPreview(){
+  const s=getPickerValue('dp-res-start-wrap');
+  const e=getPickerValue('dp-res-end-wrap');
+  const price=parseFloat(document.getElementById('res-price')?.value)||0;
+  const el=document.getElementById('res-preview');
+  if(s&&e&&e>s){
+    const n=daysBetween(parseDate(s),parseDate(e));
+    el.textContent=`${n} нощ${n<2?'':'и'} × ${price} € = ${(n*price).toFixed(2)} € общо`;
+  } else { el.textContent=''; }
+}
+
+document.getElementById('res-price').addEventListener('input',updateResPreview);
+
+function saveRes(){
+  const roomId=parseInt(document.getElementById('res-room').value);
+  const guestName=document.getElementById('res-name').value.trim();
+  const startDate=getPickerValue('dp-res-start-wrap');
+  const endDate=getPickerValue('dp-res-end-wrap');
+  const price=parseFloat(document.getElementById('res-price').value)||0;
+  const notes=document.getElementById('res-notes').value.trim();
+
+  if(!guestName){showToast('Въведете името на госта.');return;}
+  if(!startDate||!endDate){showToast('Изберете дати.');return;}
+  if(endDate<=startDate){showToast('Напускането трябва да е след настаняването.');return;}
+
+  const ns=parseDate(startDate),ne=parseDate(endDate);
+  const clash=state.reservations.find(r=>{
+    if(r.roomId!==roomId)return false;
+    if(editingId&&r.id===editingId)return false;
+    const rs=parseDate(r.startDate),re=parseDate(r.endDate);
+    return ns<re&&ne>rs;
+  });
+  if(clash){showToast(`Припокриване с резервация на ${clash.guestName}!`);return;}
+
+  const entry={id:editingId||uid(),roomId,guestName,startDate,endDate,
+    pricePerNight:price,colorId:selColor,notes};
+  if(editingId){
+    const i=state.reservations.findIndex(r=>r.id===editingId);
+    if(i>-1) state.reservations[i]=entry;
+  } else {
+    state.reservations.push(entry);
+  }
+  save();renderCalendar();calcRevenue();closeResModal();
+  showToast('Резервацията е запазена ✓');
+}
+
+function deleteRes(){
+  if(!editingId) return;
+  if(!confirm('Изтриване на резервацията?')) return;
+  state.reservations=state.reservations.filter(r=>r.id!==editingId);
+  save();renderCalendar();calcRevenue();closeResModal();
+  showToast('Резервацията е изтрита');
+}
+
+function nextColor(roomId){
+  const used=state.reservations.filter(r=>r.roomId===roomId).map(r=>r.colorId);
+  for(let i=0;i<COLORS.length;i++) if(!used.includes(i)) return i;
+  return Math.floor(Math.random()*COLORS.length);
+}
+
+/* ═══════════════ ROOMS SETTINGS ════════════════════════════ */
+function renderRooms(){
+  document.getElementById('room-list').innerHTML=state.rooms.map(r=>`
+    <div class="room-item">
+      <span style="font-size:.75rem;color:var(--muted);min-width:22px;">${r.id+1}.</span>
+      <input type="text" value="${escA(r.name)}" id="rn-${r.id}" placeholder="Стая ${r.id+1}">
+      <div class="price-wrap">
+        <input type="number" value="${r.defaultPrice||50}" id="rp-${r.id}" min="0" step="1">
+        <span>€/нощ</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('gh-name-input').value=state.guesthouseName;
+}
+
+function saveRooms(){
+  state.rooms.forEach(r=>{
+    const n=document.getElementById(`rn-${r.id}`);
+    const p=document.getElementById(`rp-${r.id}`);
+    if(n) r.name=n.value.trim()||`Стая ${r.id+1}`;
+    if(p) r.defaultPrice=parseFloat(p.value)||0;
+  });
+  save();renderCalendar();showToast('Стаите са запазени ✓');
+}
+
+function saveGHName(){
+  state.guesthouseName=document.getElementById('gh-name-input').value.trim()||'Квартира';
+  updateTitle();save();showToast('Името е запазено ✓');
+}
+
+function updateTitle(){
+  document.getElementById('gh-title').textContent='🏡 '+state.guesthouseName;
+  document.title=state.guesthouseName;
+}
+
+function quickRename(id){
+  const r=state.rooms.find(x=>x.id===id);
+  if(!r) return;
+  const n=prompt('Ново име:',r.name);
+  if(n!==null&&n.trim()){r.name=n.trim();save();renderCalendar();renderRooms();showToast('Преименувано ✓');}
+}
+
+/* ═══════════════ REVENUE ════════════════════════════════════ */
+function calcRevenue(){
+  const fromVal=getPickerValue('dp-rev-from-wrap');
+  const toVal=getPickerValue('dp-rev-to-wrap');
+  if(!fromVal||!toVal) return;
+  const fromD=parseDate(fromVal);
+  const toD=parseDate(toVal);
+  toD.setDate(toD.getDate()+1);
+
+  const rr={};
+  state.rooms.forEach(r=>{rr[r.id]=0;});
+  state.reservations.forEach(res=>{
+    const rs=parseDate(res.startDate),re=parseDate(res.endDate);
+    const os=new Date(Math.max(rs,fromD)),oe=new Date(Math.min(re,toD));
+    if(os>=oe) return;
+    rr[res.roomId]=(rr[res.roomId]||0)+daysBetween(os,oe)*(res.pricePerNight||0);
+  });
+
+  const total=Object.values(rr).reduce((a,b)=>a+b,0);
+  const bookedRooms=Object.values(rr).filter(v=>v>0).length;
+  const periodDays=daysBetween(fromD,toD);
+  const totalNights=state.rooms.length*periodDays;
+  const bookedNights=state.reservations.reduce((acc,res)=>{
+    const rs=parseDate(res.startDate),re=parseDate(res.endDate);
+    const os=new Date(Math.max(rs,fromD)),oe=new Date(Math.min(re,toD));
+    if(os>=oe) return acc;
+    return acc+daysBetween(os,oe);
+  },0);
+  const occ=totalNights?((bookedNights/totalNights)*100).toFixed(1):0;
+
+  document.getElementById('rev-summary').innerHTML=`
+    <div class="rev-card"><div class="lbl">Общ приход за периода</div><div class="val">${total.toFixed(2)} €</div></div>
+    <div class="rev-card"><div class="lbl">Заети стаи (с приход)</div><div class="val">${bookedRooms} / ${state.rooms.length}</div></div>
+    <div class="rev-card"><div class="lbl">Заетост</div><div class="val">${occ}%</div></div>`;
+
+  const rows=state.rooms.map(r=>`<tr><td>${esc(r.name)}</td><td>${rr[r.id]>0?rr[r.id].toFixed(2)+' €':'—'}</td></tr>`).join('');
+  document.getElementById('rev-table').innerHTML=`
+    <thead><tr><th>Стая</th><th>Приход (€)</th></tr></thead>
+    <tbody>${rows}<tr class="tot"><td><strong>Общо</strong></td><td><strong>${total.toFixed(2)} €</strong></td></tr></tbody>`;
+}
+
+/* ═══════════════ TABS ═══════════════════════════════════════ */
+function switchTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='revenue') calcRevenue();
+  if(name==='settings') renderRooms();
+}
+
+/* ═══════════════ DRIVE ══════════════════════════════════════ */
+function openDriveModal(){
+  document.getElementById('drive-cid').value=state.driveConfig.clientId||'';
+  document.getElementById('drive-fname').value=state.driveConfig.filename||'guesthouse-data.json';
+  document.getElementById('drive-overlay').classList.add('open');
+}
+function closeDriveModal(){ document.getElementById('drive-overlay').classList.remove('open'); }
+
+function saveDriveConfig(){
+  state.driveConfig.clientId=document.getElementById('drive-cid').value.trim();
+  state.driveConfig.filename=document.getElementById('drive-fname').value.trim()||'guesthouse-data.json';
+  save();closeDriveModal();
+  if(state.driveConfig.clientId) initGoogleAuth();
+}
+
+function initGoogleAuth(){
+  if(!state.driveConfig.clientId) return;
+  if(!document.getElementById('gsi-script')){
+    const s=document.createElement('script');
+    s.id='gsi-script';s.src='https://accounts.google.com/gsi/client';
+    s.onload=()=>doGoogleSignIn();document.head.appendChild(s);
+  } else { doGoogleSignIn(); }
+}
+
+function doGoogleSignIn(){
+  try{
+    const client=google.accounts.oauth2.initTokenClient({
+      client_id:state.driveConfig.clientId,
+      scope:'https://www.googleapis.com/auth/drive.file',
+      callback:(resp)=>{
+        if(resp.error){showToast('Грешка при Google Auth');return;}
+        driveToken=resp.access_token;
+        state.driveConfig.connected=true;
+        save();updateDriveStatus();showToast('Drive свързан ✓');syncNow();
+      }
+    });
+    client.requestAccessToken();
+  }catch(e){showToast('Google Auth грешка: '+e.message);}
+}
+
+async function syncNow(){
+  if(!driveToken){
+    if(state.driveConfig.clientId) initGoogleAuth();
+    else{updateSyncBar('local','Само локално','');showToast('Drive не е настроен.');}
+    return;
+  }
+  updateSyncBar('pending','Синхронизиране...','');
+  try{
+    await driveUpload();
+    const n=new Date();
+    updateSyncBar('ok','Синхронизирано',n.toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'}));
+    showToast('Синхронизирано с Drive ✓');
+  }catch(e){updateSyncBar('error','Грешка при синхр.','');showToast('Грешка: '+e.message);}
+}
+
+async function driveUpload(){
+  const json=JSON.stringify(state,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const search=await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
+    {headers:{'Authorization':'Bearer '+driveToken}});
+  const sd=await search.json();
+  const files=sd.files||[];
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify({name:state.driveConfig.filename})],{type:'application/json'}));
+  form.append('file',blob);
+  if(files.length>0){
+    const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${files[0].id}?uploadType=multipart`,
+      {method:'PATCH',headers:{'Authorization':'Bearer '+driveToken},body:form});
+    if(!r.ok) throw new Error(await r.text());
+  } else {
+    const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {method:'POST',headers:{'Authorization':'Bearer '+driveToken},body:form});
+    if(!r.ok) throw new Error(await r.text());
+  }
+}
+
+function startAutoSync(){
+  clearInterval(autoSyncTimer);
+  autoSyncTimer=setInterval(()=>{ if(driveToken) syncNow(); },60000);
+}
+
+function updateDriveStatus(){
+  const ok=state.driveConfig.connected&&driveToken;
+  const dot=document.getElementById('drive-dot');
+  const txt=document.getElementById('drive-text');
+  if(dot) dot.className='sync-dot '+(ok?'ok':'local');
+  if(txt) txt.textContent=ok?'Drive свързан':'Не е свързан';
+}
+
+function updateSyncBar(status,text,time){
+  document.getElementById('sync-dot').className='sync-dot '+status;
+  document.getElementById('sync-text').textContent=text;
+  document.getElementById('sync-time').textContent=time?('Последно: '+time):'';
+}
+
+/* ═══════════════ IMPORT / EXPORT ═══════════════════════════ */
+function exportJSON(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
+  a.download='guesthouse-data.json';a.click();
+}
+function importJSON(){ document.getElementById('import-file').click(); }
+function doImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      Object.assign(state,JSON.parse(ev.target.result));
+      save();renderCalendar();renderRooms();updateTitle();calcRevenue();
+      showToast('Данните са заредени ✓');
+    }catch{showToast('Невалиден файл.');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+function clearAll(){
+  if(!confirm('Изтриване на ВСИЧКИ резервации? Необратимо!')) return;
+  state.reservations=[];save();renderCalendar();calcRevenue();
+  showToast('Резервациите са изтрити');
+}
+
+/* ═══════════════ TOAST ══════════════════════════════════════ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* Close modals on backdrop click */
+document.getElementById('res-overlay').addEventListener('click',function(e){if(e.target===this)closeResModal();});
+document.getElementById('drive-overlay').addEventListener('click',function(e){if(e.target===this)closeDriveModal();});
+
+/* ═══════════════ PIN LOCK ═══════════════════════════════════ */
+const PIN='1962';
+let pinEntry='';
+
+function pinPress(digit){
+  if(pinEntry.length>=4) return;
+  pinEntry+=digit;
+  updatePinDots();
+  if(pinEntry.length===4) setTimeout(checkPin,120);
+}
+
+function pinClear(){
+  pinEntry=pinEntry.slice(0,-1);
+  updatePinDots();
+  document.getElementById('pin-error').textContent='';
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++)
+    document.getElementById('pd'+i).classList.toggle('filled',i<pinEntry.length);
+}
+
+function checkPin(){
+  if(pinEntry===PIN){
+    sessionStorage.setItem('gh_unlocked','1');
+    const scr=document.getElementById('pin-screen');
+    scr.style.transition='opacity .3s';
+    scr.style.opacity='0';
+    setTimeout(()=>scr.remove(),320);
+  } else {
+    pinEntry='';
+    updatePinDots();
+    const err=document.getElementById('pin-error');
+    err.textContent='Грешен PIN. Опитайте отново.';
+    // re-trigger shake animation
+    err.style.animation='none';
+    setTimeout(()=>err.style.animation='',10);
+  }
+}
+
+// Check session — if already unlocked this session, skip PIN screen
+if(sessionStorage.getItem('gh_unlocked')==='1'){
+  document.getElementById('pin-screen').remove();
+}
+
+// Allow keyboard PIN entry too
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('pin-screen')) return;
+  if(e.key>='0'&&e.key<='9') pinPress(e.key);
+  if(e.key==='Backspace') pinClear();
+});
+
+init();
+</script>
+</body>
+</html>
