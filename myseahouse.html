@@ -193,6 +193,20 @@
     header h1{font-size:.95rem;} .hdr-btn{padding:5px 8px;font-size:.75rem;}
   }
 
+  /* DOWNLOAD REMINDER BANNER */
+  #download-banner{
+    background:#F59E0B;color:#1A1714;padding:10px 14px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:.85rem;font-weight:600;position:sticky;top:104px;z-index:85;
+    border-bottom:2px solid #D97706;
+  }
+  #download-banner button{
+    background:#1A1714;color:#fff;border:none;border-radius:var(--radius);
+    padding:7px 14px;font-size:.82rem;font-weight:700;cursor:pointer;
+    font-family:var(--font);white-space:nowrap;
+  }
+  #download-banner.hidden{display:none;}
+
   /* PIN LOCK SCREEN */
   #pin-screen{position:fixed;inset:0;background:var(--accent);z-index:9999;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
@@ -255,6 +269,12 @@
   <button class="tab active" onclick="switchTab('calendar',this)">📅 Календар</button>
   <button class="tab" onclick="switchTab('revenue',this)">💶 Приходи</button>
   <button class="tab" onclick="switchTab('settings',this)">⚙ Настройки</button>
+</div>
+
+<!-- DOWNLOAD REMINDER BANNER -->
+<div id="download-banner" class="hidden">
+  <span>📥 Натисни „Свали" за да получиш последните промени</span>
+  <button onclick="bannerDownload()">⬇ Свали сега</button>
 </div>
 
 <!-- CALENDAR -->
@@ -994,6 +1014,7 @@ async function driveDownload(){
     showToast('Drive не е настроен — отиди в ⚙ Настройки.');
     return;
   }
+  hideDownloadBanner();
   ensureToken(async()=>{
     updateSyncBar('pending','Изтегляне от Drive...','');
     try{
@@ -1013,6 +1034,7 @@ async function driveDownload(){
       renderCalendar();renderRooms();updateTitle();calcRevenue();
       const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
       updateSyncBar('ok','Изтеглено от Drive',t);
+      hideDownloadBanner();
       showToast('Данните са обновени ⬇');
     }catch(e){ updateSyncBar('error','Грешка при изтегляне',''); showToast('Грешка: '+e.message); }
   });
@@ -1093,6 +1115,20 @@ function showToast(msg){
 document.getElementById('res-overlay').addEventListener('click',function(e){if(e.target===this)closeResModal();});
 document.getElementById('drive-overlay').addEventListener('click',function(e){if(e.target===this)closeDriveModal();});
 
+/* ═══════════════ DOWNLOAD REMINDER BANNER ══════════════════ */
+function showDownloadBanner(){
+  const banner=document.getElementById('download-banner');
+  if(banner) banner.classList.remove('hidden');
+}
+function hideDownloadBanner(){
+  const banner=document.getElementById('download-banner');
+  if(banner) banner.classList.add('hidden');
+}
+function bannerDownload(){
+  hideDownloadBanner();
+  driveDownload();
+}
+
 /* ═══════════════ PIN LOCK ═══════════════════════════════════ */
 const PIN='1962';
 let pinEntry='';
@@ -1121,7 +1157,7 @@ function checkPin(){
     const scr=document.getElementById('pin-screen');
     scr.style.transition='opacity .3s';
     scr.style.opacity='0';
-    setTimeout(()=>scr.remove(),320);
+    setTimeout(()=>{ scr.remove(); if(state.driveConfig.clientId) showDownloadBanner(); },320);
   } else {
     pinEntry='';
     updatePinDots();
@@ -1136,6 +1172,7 @@ function checkPin(){
 // Check session — if already unlocked this session, skip PIN screen
 if(sessionStorage.getItem('gh_unlocked')==='1'){
   document.getElementById('pin-screen').remove();
+  if(state.driveConfig.clientId) showDownloadBanner();
 }
 
 // Allow keyboard PIN entry too
