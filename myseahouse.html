@@ -313,7 +313,7 @@
   </div>
   <div class="drive-setup" style="margin-top:18px;">
     <h4>☁ Google Drive синхронизация</h4>
-    <p>За синхронизация с телефона свържете Google Drive. Данните се записват автоматично.</p>
+    <p>За синхронизация с телефона свържете Google Drive. Данните се записват автоматично. Бащата не трябва да знае паролата.</p>
     <button class="btn btn-primary" onclick="openDriveModal()">Настрой Drive</button>
     <div class="drive-status">
       <span class="sync-dot local" id="drive-dot"></span>
@@ -961,26 +961,56 @@ async function syncNow(){
   }
   updateSyncBar('pending','Синхронизиране...','');
   try{
-    await driveUpload();
+    await driveBidirectionalSync();
     const n=new Date();
     updateSyncBar('ok','Синхронизирано',n.toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'}));
     showToast('Синхронизирано с Drive ✓');
   }catch(e){updateSyncBar('error','Грешка при синхр.','');showToast('Грешка: '+e.message);}
 }
 
-async function driveUpload(){
-  const json=JSON.stringify(state,null,2);
-  const blob=new Blob([json],{type:'application/json'});
+async function driveBidirectionalSync(){
+  // 1. Find file in Drive (get id + modifiedTime)
   const search=await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
+    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id,modifiedTime)`,
     {headers:{'Authorization':'Bearer '+driveToken}});
   const sd=await search.json();
   const files=sd.files||[];
+
+  if(files.length===0){
+    // No file in Drive yet — first device, just upload
+    await driveWriteFile(null);
+    return;
+  }
+
+  const fileId=files[0].id;
+  const driveModified=new Date(files[0].modifiedTime).getTime();
+  const localModified=state.lastModified||0;
+
+  if(driveModified>localModified){
+    // Drive is newer — download and apply
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      {headers:{'Authorization':'Bearer '+driveToken}});
+    if(!r.ok) throw new Error(await r.text());
+    const remote=await r.json();
+    Object.assign(state,remote);
+    state.lastModified=driveModified;
+    localStorage.setItem('gh_state',JSON.stringify(state));
+    renderCalendar();renderRooms();updateTitle();calcRevenue();
+  } else {
+    // Local is newer or same — upload
+    await driveWriteFile(fileId);
+  }
+}
+
+async function driveWriteFile(fileId){
+  state.lastModified=Date.now();
+  localStorage.setItem('gh_state',JSON.stringify(state));
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const form=new FormData();
   form.append('metadata',new Blob([JSON.stringify({name:state.driveConfig.filename})],{type:'application/json'}));
   form.append('file',blob);
-  if(files.length>0){
-    const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${files[0].id}?uploadType=multipart`,
+  if(fileId){
+    const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
       {method:'PATCH',headers:{'Authorization':'Bearer '+driveToken},body:form});
     if(!r.ok) throw new Error(await r.text());
   } else {
