@@ -313,7 +313,7 @@
   </div>
   <div class="drive-setup" style="margin-top:18px;">
     <h4>☁ Google Drive синхронизация</h4>
-    <p>За синхронизация с телефона свържете Google Drive. Данните се записват автоматично. Бащата не трябва да знае паролата.</p>
+    <p>За синхронизация с телефона свържете Google Drive. Данните се записват автоматично.</p>
     <button class="btn btn-primary" onclick="openDriveModal()">Настрой Drive</button>
     <div class="drive-status">
       <span class="sync-dot local" id="drive-dot"></span>
@@ -842,11 +842,13 @@ function saveRooms(){
     if(n) r.name=n.value.trim()||`Стая ${r.id+1}`;
     if(p) r.defaultPrice=parseFloat(p.value)||0;
   });
+  state.settingsModified=Date.now();
   save();renderCalendar();showToast('Стаите са запазени ✓');
 }
 
 function saveGHName(){
   state.guesthouseName=document.getElementById('gh-name-input').value.trim()||'Квартира';
+  state.settingsModified=Date.now();
   updateTitle();save();showToast('Името е запазено ✓');
 }
 
@@ -969,7 +971,7 @@ async function syncNow(){
 }
 
 async function driveBidirectionalSync(){
-  // 1. Find file in Drive (get id + modifiedTime)
+  // 1. Find file in Drive
   const search=await fetch(
     `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id,modifiedTime)`,
     {headers:{'Authorization':'Bearer '+driveToken}});
@@ -987,17 +989,39 @@ async function driveBidirectionalSync(){
   const localModified=state.lastModified||0;
 
   if(driveModified>localModified){
-    // Drive is newer — download and apply
+    // Drive is newer — download remote, merge local changes on top, upload result
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       {headers:{'Authorization':'Bearer '+driveToken}});
     if(!r.ok) throw new Error(await r.text());
     const remote=await r.json();
-    Object.assign(state,remote);
-    state.lastModified=driveModified;
+
+    // Merge strategy:
+    // - Reservations: union by id (remote + any local-only ones)
+    // - Settings (name, rooms, driveConfig): whichever was modified more recently
+    const remoteResIds=new Set((remote.reservations||[]).map(r=>r.id));
+    const localOnlyRes=(state.reservations||[]).filter(r=>!remoteResIds.has(r.id));
+    const mergedRes=[...(remote.reservations||[]),...localOnlyRes];
+
+    // Take remote as base, overlay local settings only if local is newer
+    const merged=Object.assign({},remote);
+    merged.reservations=mergedRes;
+    merged.lastModified=Date.now();
+
+    // If local has newer room/name changes, keep those
+    if((state.settingsModified||0)>(remote.settingsModified||0)){
+      merged.guesthouseName=state.guesthouseName;
+      merged.rooms=state.rooms;
+      merged.settingsModified=state.settingsModified;
+    }
+
+    merged.driveConfig=state.driveConfig; // always keep local drive config
+    Object.assign(state,merged);
     localStorage.setItem('gh_state',JSON.stringify(state));
     renderCalendar();renderRooms();updateTitle();calcRevenue();
+    // Upload the merged result so other devices get it
+    await driveWriteFile(fileId);
   } else {
-    // Local is newer or same — upload
+    // Local is newer — upload
     await driveWriteFile(fileId);
   }
 }
