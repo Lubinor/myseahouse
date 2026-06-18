@@ -647,7 +647,10 @@ function init(){
   calcRevenue();
   updateDriveStatus();
   startAutoSync();
-
+  // Show download banner after state is loaded, if Drive configured and already past PIN
+  if(state.driveConfig.clientId && sessionStorage.getItem('gh_unlocked')==='1'){
+    showDownloadBanner();
+  }
 }
 
 /* ═══════════════ CALENDAR ══════════════════════════════════ */
@@ -1172,7 +1175,6 @@ function checkPin(){
 // Check session — if already unlocked this session, skip PIN screen
 if(sessionStorage.getItem('gh_unlocked')==='1'){
   document.getElementById('pin-screen').remove();
-  if(state.driveConfig.clientId) showDownloadBanner();
 }
 
 // Allow keyboard PIN entry too
