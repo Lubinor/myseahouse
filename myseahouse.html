@@ -1158,7 +1158,9 @@ function driveUploadAuto(){
   });
 }
 
-/* driveDownload — manual button, pulls latest state from Drive */
+/* driveDownload — manual button, pulls latest reservations from Drive.
+   Only reservations are downloaded — local settings (rooms, name, prices)
+   are always preserved so they never get overwritten by an old Drive file. */
 async function driveDownload(){
   if(!state.driveConfig.clientId){
     showToast('Drive не е настроен — отиди в ⚙ Настройки.');
@@ -1178,14 +1180,14 @@ async function driveDownload(){
         {headers:{'Authorization':'Bearer '+driveToken}});
       if(!r.ok) throw new Error(await r.text());
       const remote=await r.json();
-      remote.driveConfig=state.driveConfig;
-      Object.assign(state,remote);
+      // Only import reservations from Drive — all settings stay local
+      state.reservations=remote.reservations||[];
       localStorage.setItem('gh_state',JSON.stringify(state));
-      renderCalendar();renderRooms();updateTitle();calcRevenue();
+      renderCalendar();calcRevenue();
       const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
       updateSyncBar('ok','Изтеглено от Drive',t);
       hideDownloadBanner();
-      showToast('Данните са обновени ⬇');
+      showToast('Резервациите са обновени ⬇');
     }catch(e){ updateSyncBar('error','Грешка при изтегляне',''); showToast('Грешка: '+e.message); }
   });
 }
