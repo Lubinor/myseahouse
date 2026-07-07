@@ -17,7 +17,7 @@
     --r4:#10B981; --r4t:#D1FAE5; --r5:#F97316; --r5t:#FFEDD5;
     --r6:#EC4899; --r6t:#FCE7F3; --r7:#6366F1; --r7t:#E0E7FF;
     --radius:6px; --font:'Segoe UI',system-ui,sans-serif;
-    --cell-w:54px; --cell-h:48px; --room-col:130px;
+    --cell-w:68px; --cell-h:56px; --room-col:36px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);font-family:var(--font);color:var(--text);min-height:100vh;}
@@ -52,7 +52,13 @@
   .nav-arrow:hover{background:var(--accent-lt);}
 
   /* CALENDAR */
-  .cal-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;}
+  .cal-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;
+    scrollbar-width:none;-ms-overflow-style:none;}
+  .cal-wrap::-webkit-scrollbar{display:none;height:0;}
+  .cal-top-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;height:16px;}
+  .cal-top-scroll #cal-top-scroll-inner{height:1px;}
+  .cal-bottom-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;height:16px;margin-top:2px;}
+  .cal-bottom-scroll #cal-bottom-scroll-inner{height:1px;}
   /* Ensure the sticky right column is always visible by reserving space */
   .cal-table{margin-right:0;}
   .cal-table{border-collapse:collapse;min-width:max-content;}
@@ -72,18 +78,20 @@
   #cal-foot th:first-child{width:var(--room-col);min-width:var(--room-col);
     left:0;z-index:20;background:var(--surface);}
   .cal-table tbody td.room-cell{position:sticky;left:0;z-index:5;
-    border:1px solid var(--border);padding:4px 8px;font-size:.75rem;font-weight:700;
-    white-space:normal;width:var(--room-col);min-width:var(--room-col);
-    max-width:var(--room-col);cursor:pointer;vertical-align:middle;line-height:1.3;}
+    border:1px solid var(--border);padding:4px 2px;font-size:.8rem;font-weight:700;
+    white-space:nowrap;width:var(--room-col);min-width:var(--room-col);
+    max-width:var(--room-col);cursor:pointer;vertical-align:middle;line-height:1.3;
+    text-align:center;overflow:visible;}
   .cal-table tbody td.room-cell:hover{filter:brightness(.93);}
   /* right room label cell */
   .cal-table tbody td.room-cell-right{position:sticky;right:0;z-index:5;
     border:1px solid var(--border);border-left-width:3px;
-    padding:4px 8px;font-size:.75rem;font-weight:700;
-    white-space:normal;width:var(--room-col);min-width:var(--room-col);
-    color:var(--text);box-shadow:-3px 0 6px rgba(0,0,0,.08);
-    vertical-align:middle;line-height:1.3;}
+    padding:4px 2px;font-size:.8rem;font-weight:700;
+    white-space:nowrap;width:var(--room-col);min-width:var(--room-col);
+    max-width:var(--room-col);color:var(--text);box-shadow:-3px 0 6px rgba(0,0,0,.08);
+    vertical-align:middle;line-height:1.3;text-align:center;overflow:visible;}
   .cal-table thead th:last-child, #cal-foot th:last-child{
+    width:var(--room-col);min-width:var(--room-col);
     position:sticky;right:0;z-index:20;background:var(--surface);
     border-left:2px solid var(--accent);box-shadow:-3px 0 6px rgba(0,0,0,.08);}
   .cal-table tbody td.day-cell{border:1px solid var(--border);width:var(--cell-w);
@@ -95,7 +103,7 @@
 
   /* RESERVATION BLOCKS */
   .res-block{position:absolute;inset:2px;border-radius:3px;display:flex;align-items:center;
-    font-size:.62rem;font-weight:700;overflow:hidden;white-space:nowrap;padding:2px 3px 0 3px;
+    font-size:.7rem;font-weight:700;overflow:hidden;white-space:nowrap;padding:2px 3px 0 3px;
     cursor:pointer;z-index:2;border:1.5px solid transparent;}
   .res-block.span-start{border-radius:3px 0 0 3px;justify-content:flex-start;}
   .res-block.span-mid{border-radius:0;justify-content:flex-start;}
@@ -109,7 +117,9 @@
   .res-block .dep-strip.paid{background:#16A34A;}
   .res-block .dep-strip.unpaid{background:#DC2626;}
   .res-block .res-name{
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+    overflow:hidden;text-overflow:ellipsis;white-space:normal;
+    word-break:break-word;line-height:1.2;
     max-width:100%;
   }
 
@@ -190,10 +200,11 @@
     border-radius:var(--radius);padding:14px;margin-bottom:14px;}
   .rev-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px;}
   .rev-row .form-row{margin:0;flex:1;min-width:140px;}
-  .rev-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-  .rev-table th,.rev-table td{border:1px solid var(--border);padding:8px 10px;text-align:right;}
+  .rev-table{border-collapse:collapse;font-size:.85rem;margin:0 auto;}
+  .rev-table th,.rev-table td{border:1px solid var(--border);padding:8px 10px;text-align:right;font-weight:700;}
   .rev-table th{background:var(--accent);color:#fff;font-size:.78rem;}
-  .rev-table td:first-child,.rev-table th:first-child{text-align:left;}
+  .rev-table td:first-child,.rev-table th:first-child{text-align:center;width:130px;padding:8px 4px;}
+  .rev-table td:last-child,.rev-table th:last-child{width:130px;}
   .rev-table tr:nth-child(even) td{background:var(--accent-lt);}
   .rev-table tr.tot td{font-weight:700;background:var(--bg);}
   .rev-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
@@ -217,6 +228,16 @@
   .sync-dot.ok{background:#10B981;} .sync-dot.pending{background:#F59E0B;}
   .sync-dot.error{background:var(--warn);} .sync-dot.local{background:var(--muted);}
 
+  /* BOOKING HOVER TOOLTIP — custom-built (desktop/mouse only) since native
+     title tooltips can't be resized or restyled */
+  .res-tooltip{position:fixed;display:none;z-index:1000;pointer-events:none;
+    background:#1A1714;color:#fff;padding:10px 16px;border-radius:8px;
+    font-size:1rem;line-height:1.45;max-width:320px;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);}
+  .res-tooltip .tt-name{font-weight:700;}
+  .res-tooltip .tt-deposit{font-weight:400;}
+  .res-tooltip .tt-notes{font-weight:400;opacity:.85;margin-top:3px;font-size:.9rem;}
+
   /* TOAST */
   .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
     background:#1A1714;color:#fff;padding:10px 18px;border-radius:20px;font-size:.85rem;
@@ -224,8 +245,8 @@
   .toast.show{opacity:1;}
 
   @media(max-width:520px){
-    :root{--cell-w:38px;--cell-h:44px;--room-col:100px;}
-    .res-block{font-size:.58rem;} .modal{padding:16px;}
+    :root{--cell-w:48px;--cell-h:52px;--room-col:32px;}
+    .res-block{font-size:.64rem;} .modal{padding:16px;}
     header h1{font-size:.95rem;} .hdr-btn{padding:5px 8px;font-size:.75rem;}
   }
 
@@ -320,9 +341,11 @@
     <h2 id="month-label"></h2>
     <button class="nav-arrow" onclick="changeMonth(1)">›</button>
   </div>
-  <div class="cal-wrap">
+  <div class="cal-top-scroll" id="cal-top-scroll"><div id="cal-top-scroll-inner"></div></div>
+  <div class="cal-wrap" id="cal-wrap">
     <table class="cal-table"><thead id="cal-head"></thead><tbody id="cal-body"></tbody><tbody id="cal-foot"></tbody></table>
   </div>
+  <div class="cal-bottom-scroll" id="cal-bottom-scroll"><div id="cal-bottom-scroll-inner"></div></div>
   <p style="font-size:.74rem;color:var(--muted);margin-top:8px;padding-bottom:44px;">
     Натиснете върху ден за нова резервация. Натиснете върху резервация за редакция.
   </p>
@@ -422,7 +445,7 @@
     <div class="form-row">
       <label>Депозит (€) — оставете 0 ако няма</label>
       <div style="display:flex;gap:8px;align-items:center;">
-        <input type="number" id="res-deposit" min="0" step="1" value="0" style="width:100px;">
+        <input type="number" id="res-deposit" min="0" step="1" value="50" style="width:100px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:.88rem;font-weight:600;color:var(--text);cursor:pointer;">
           <input type="checkbox" id="res-deposit-paid" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
           Платен
@@ -434,6 +457,11 @@
       <input type="text" id="res-notes" placeholder="напр. 2 възрастни + 1 дете">
     </div>
     <div id="res-preview" style="font-size:.82rem;color:var(--muted);margin-top:4px;min-height:18px;"></div>
+    <div id="res-stale-warning" style="display:none;background:var(--warn-lt);border:1px solid var(--warn);
+      border-radius:var(--radius);padding:10px 12px;margin-top:10px;font-size:.85rem;color:var(--warn);">
+      Имате неотразени промени, актуализирайте.
+      <button class="btn btn-primary" style="margin-top:8px;display:block;width:100%;" onclick="syncBeforeRetry()">Синхронизирай сега</button>
+    </div>
     <div class="btn-row">
       <div id="res-del-wrap" style="display:none;margin-right:auto;">
         <button class="btn btn-danger" id="res-del" onclick="confirmDeleteRes()">Изтрий</button>
@@ -458,7 +486,7 @@
       <br><br>
       ⚠️ <strong>Не използвайте Инкогнито</strong> — OAuth не работи там.
       <br><br>
-      <strong>Как:</strong> console.cloud.google.com → нов проект → включете Drive API → Credentials → OAuth 2.0 Client ID (Web application) → добавете <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">http://localhost:8080</code> като Authorized JS origin → копирайте Client ID.
+      <strong>Как:</strong> console.cloud.google.com → нов проект → включете Drive API → Credentials → OAuth 2.0 Client ID (Web application) → добавете <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">https://lubinor.github.io</code> като Authorized JS origin → копирайте Client ID.
     </p>
     <div class="form-row">
       <label>Google Client ID</label>
@@ -480,30 +508,36 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="res-tooltip" id="res-tooltip"></div>
 <div class="sync-bar">
-  <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-text">Само локално</span></div>
+  <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-text">Само локално</span><span id="sync-version" style="margin-left:8px;color:var(--muted);"></span></div>
   <span id="sync-time"></span>
 </div>
 
 <script>
 /* ═══════════════ COLORS ════════════════════════════════════ */
+const DEFAULT_DRIVE_FILENAME='myseahouse-data.json';
 const COLORS=[
-  {id:0,  hex:'#1565C0',tHex:'#BBDEFB'}, // blue
-  {id:1,  hex:'#2E7D32',tHex:'#C8E6C9'}, // green
-  {id:2,  hex:'#B71C1C',tHex:'#FFCDD2'}, // red
-  {id:3,  hex:'#F9A825',tHex:'#FFF59D'}, // yellow
-  {id:4,  hex:'#6A1B9A',tHex:'#E1BEE7'}, // purple
-  {id:5,  hex:'#E65100',tHex:'#FFE0B2'}, // orange
-  {id:6,  hex:'#E91E8C',tHex:'#FCE4EC'}, // hot pink
-  {id:7,  hex:'#00695C',tHex:'#B2DFDB'}, // teal
-  {id:8,  hex:'#C79100',tHex:'#FFF8DC'}, // dark yellow / gold
-  {id:9,  hex:'#C62828',tHex:'#FFEBEE'}, // light red / rose
-  {id:10, hex:'#283593',tHex:'#C5CAE9'}, // indigo
-  {id:11, hex:'#558B2F',tHex:'#DCEDC8'}, // lime
-  {id:12, hex:'#AD1457',tHex:'#F8BBD0'}, // deep pink
-  {id:13, hex:'#4E342E',tHex:'#D7CCC8'}, // brown
-  {id:14, hex:'#F57F17',tHex:'#FFF9C4'}, // amber
-  {id:15, hex:'#37474F',tHex:'#CFD8DC'}, // slate
+  {id:0,  hex:'#C62828',tHex:'#FFCDD2'}, // red
+  {id:1,  hex:'#C2185B',tHex:'#F8BBD0'}, // pink
+  {id:2,  hex:'#7B1FA2',tHex:'#E1BEE7'}, // purple
+  {id:3,  hex:'#512DA8',tHex:'#D1C4E9'}, // deep purple
+  {id:4,  hex:'#303F9F',tHex:'#C5CAE9'}, // indigo
+  {id:5,  hex:'#1976D2',tHex:'#BBDEFB'}, // blue
+  {id:6,  hex:'#0288D1',tHex:'#B3E5FC'}, // sky blue
+  {id:7,  hex:'#0097A7',tHex:'#B2EBF2'}, // cyan
+  {id:8,  hex:'#00796B',tHex:'#B2DFDB'}, // teal
+  {id:9,  hex:'#388E3C',tHex:'#C8E6C9'}, // green
+  {id:10, hex:'#689F38',tHex:'#DCEDC8'}, // light green
+  {id:11, hex:'#9E9D24',tHex:'#F0F4C3'}, // lime
+  {id:12, hex:'#F9A825',tHex:'#FFF9C4'}, // yellow
+  {id:13, hex:'#FF8F00',tHex:'#FFECB3'}, // amber
+  {id:14, hex:'#EF6C00',tHex:'#FFE0B2'}, // orange
+  {id:15, hex:'#D84315',tHex:'#FFCCBC'}, // rust
+  {id:16, hex:'#6D4C41',tHex:'#D7CCC8'}, // brown
+  {id:17, hex:'#455A64',tHex:'#CFD8DC'}, // blue grey
+  {id:18, hex:'#AA00FF',tHex:'#F3E5F5'}, // fuchsia
+  {id:19, hex:'#616161',tHex:'#EEEEEE'}, // grey
 ];
 
 /* ═══════════════ STATE ═════════════════════════════════════ */
@@ -511,31 +545,32 @@ let state={
   guesthouseName:'Морската къща',
   rooms:[],
   reservations:[],
-  driveConfig:{clientId:'',filename:'myseahouse-data.json',connected:false},
+  driveConfig:{clientId:'',filename:DEFAULT_DRIVE_FILENAME,connected:false},
+  syncVersion:0,
 };
 // Each room: {id, name, defaultPrice, group}
 // group index determines row background color (0-5)
 const DEF_ROOMS=[
-  {name:'Стая 2 - двойна',    group:0},
-  {name:'Стая 5 - двойна',    group:0},
-  {name:'Стая 7 - двойна',    group:0},
-  {name:'Стая 1 - тройна',    group:1},
-  {name:'Стая 4 - тройна',    group:1},
-  {name:'Стая 3 - тройна бокс', group:2},
-  {name:'Стая 6 - тройна бокс', group:2},
-  {name:'Стая 9 - тройна бокс', group:2},
-  {name:'Стая 10 - тройна с веранда', group:3},
-  {name:'Стая 8 - четворна',  group:4},
-  {name:'Стая 11 - апартамент', group:5},
+  {name:'2',  group:0},
+  {name:'5',  group:0},
+  {name:'7',  group:0},
+  {name:'1',  group:1},
+  {name:'4',  group:1},
+  {name:'3',  group:2},
+  {name:'6',  group:2},
+  {name:'9',  group:2},
+  {name:'10', group:3},
+  {name:'8',  group:4},
+  {name:'A',  group:5},
 ];
 // Soft pastel group colors — muted enough for dark text, distinct from each other
 const GROUP_COLORS=[
   {bg:'#D6EAF8',border:'#2E86C1'}, // soft blue      — двойни
   {bg:'#D5F5E3',border:'#1E8449'}, // soft green     — тройни
-  {bg:'#FAE5D3',border:'#CA6F1E'}, // soft orange    — тройни бокс
+  {bg:'#FFEE58',border:'#FBC02D'}, // pure-ish yellow — тройни бокс
   {bg:'#E8DAEF',border:'#7D3C98'}, // soft purple    — тройка веранда
   {bg:'#FDEBD0',border:'#D68910'}, // soft amber     — четворна
-  {bg:'#D1F2EB',border:'#148F77'}, // soft teal      — апартамент
+  {bg:'#CFD8DC',border:'#455A64'}, // slate grey     — апартамент (A)
 ];
 
 let curYear=new Date().getFullYear(), curMonth=new Date().getMonth();
@@ -719,6 +754,17 @@ function init(){
     // Migrate: assign group to existing rooms that don't have one yet
     const groupMap=[0,0,0,1,1,2,2,2,3,4,5];
     state.rooms.forEach((r,i)=>{ if(r.group===undefined) r.group=groupMap[i]||0; });
+    // One-time migration: old full-text room names -> new short codes.
+    // Only overwrites a room if its saved name still exactly matches the old
+    // default text — any room already manually renamed is left untouched.
+    const OLD_DEFAULT_NAMES=['Стая 2 - двойна','Стая 5 - двойна','Стая 7 - двойна',
+      'Стая 1 - тройна','Стая 4 - тройна','Стая 3 - тройна бокс','Стая 6 - тройна бокс',
+      'Стая 9 - тройна бокс','Стая 10 - тройна с веранда','Стая 8 - четворна','Стая 11 - апартамент'];
+    let renamed=false;
+    state.rooms.forEach((r,i)=>{
+      if(r.name===OLD_DEFAULT_NAMES[i] && DEF_ROOMS[i]){ r.name=DEF_ROOMS[i].name; renamed=true; }
+    });
+    if(renamed) save();
   }
 
   // Create pickers
@@ -733,11 +779,13 @@ function init(){
   setPickerValue('dp-rev-to-wrap',lastOfMonth);
 
   renderCalendar();
+  scrollToTodayIfCurrentMonth();
   renderRooms();
   setupColors();
   updateTitle();
   calcRevenue();
   updateDriveStatus();
+  updateVersionBadge();
   startAutoSync();
   // Show download banner after state is loaded, if Drive configured and already past PIN
   if(state.driveConfig.clientId && sessionStorage.getItem('gh_unlocked')==='1'){
@@ -772,12 +820,12 @@ function renderCalendar(){
       const ds=iso(curYear,curMonth+1,d);
       const wk=isWknd(jsD);
       const cls=forThead?`${ds===todayStr?'today-hdr':''}${wk?' wknd-hdr':''}`:'' ;
-      const st=forThead?'':(ds===todayStr?todayStyle:(wk?wkStyle:hdrStyle));
+      const st=forThead?'':(hdrStyle+(ds===todayStr?todayStyle:(wk?wkStyle:'')));
       h+=`<${T} class="${cls}" style="${st}">${d}<br>
         <span style="font-weight:500;font-size:.68rem;">${DOW_SHORT[jsD]}</span></${T}>`;
     }
-    const cornerSt=forThead?'position:sticky;right:0;z-index:20;background:var(--surface);border-left:2px solid var(--accent);'
-      :'position:sticky;right:0;z-index:5;background:var(--surface);border-left:2px solid var(--accent);border:1px solid var(--border);height:38px;';
+    const cornerSt=forThead?'width:var(--room-col);min-width:var(--room-col);max-width:var(--room-col);position:sticky;right:0;z-index:20;background:var(--surface);border-left:2px solid var(--accent);'
+      :'width:var(--room-col);min-width:var(--room-col);max-width:var(--room-col);position:sticky;right:0;z-index:5;background:var(--surface);border-left:2px solid var(--accent);border:1px solid var(--border);height:38px;';
     h+=`<${T} style="${cornerSt}"></${T}>`;
     h+='</tr>';
     return h;
@@ -802,7 +850,7 @@ function renderCalendar(){
   let bHTML='';
   state.rooms.forEach(room=>{
     const gc=GROUP_COLORS[room.group||0];
-    const roomLabel=esc(room.name).replace(' - ','<br><span style="font-size:.7rem;font-weight:500;opacity:.85;">- ').replace(/$/,'</span>');
+    const roomLabel=esc(room.name);
     const cellStyle=`background:${gc.bg};border-left:3px solid ${gc.border};`;
     const rCellStyleRight=`background:${gc.bg};border-left:3px solid ${gc.border};`;
     bHTML+=`<tr><td class="room-cell" style="${cellStyle}" onclick="quickRename(${room.id})" title="Натиснете за преименуване">${roomLabel}</td>`;
@@ -825,9 +873,9 @@ function renderCalendar(){
         inner=`<div class="res-block span-${re.sp}"
           style="background:${c.tHex};color:${c.hex};border-color:${c.hex};"
           onclick="event.stopPropagation();openEditRes('${res.id}')"
-          title="${escA(res.guestName)}${res.deposit>0?' | Депозит: '+res.deposit+'€ '+(res.depositPaid?'✓ Платен':'✗ Неплатен'):''}">
+          data-tt-name="${escA(res.guestName)}" data-tt-notes="${escA(res.notes||'')}" data-tt-deposit="${res.deposit>0?res.deposit:''}">
           ${depStrip}
-          ${(re.sp==='start'||re.sp==='only')?`<span class="res-name">${esc(res.guestName)}</span>`:''}
+          <span class="res-name">${esc(res.guestName)}</span>
         </div>`;
       }
       bHTML+=`<td class="${cls}" onclick="openNewRes(${room.id},'${ds}')">${inner}</td>`;
@@ -839,6 +887,52 @@ function renderCalendar(){
   // FOOTER — repeat header row at bottom (populated before body to match HTML structure)
   document.getElementById('cal-foot').innerHTML=makeHeaderRow(false);
   document.getElementById('cal-body').innerHTML=bHTML;
+  syncTopScrollWidth();
+}
+
+/* Mirrored top/bottom scroll strips — keep invisible spacers the same width
+   as the table so a scrollable strip appears above AND below the grid too,
+   fully synced with the real scroll container in between. */
+function syncTopScrollWidth(){
+  const table=document.querySelector('.cal-table');
+  const topInner=document.getElementById('cal-top-scroll-inner');
+  const botInner=document.getElementById('cal-bottom-scroll-inner');
+  if(table&&topInner) topInner.style.width=table.scrollWidth+'px';
+  if(table&&botInner) botInner.style.width=table.scrollWidth+'px';
+}
+
+/* Center the horizontal scroll on today's date column — but only when the
+   month currently being viewed is the real current month. Deliberately not
+   called from renderCalendar() itself, since that runs after every save/
+   edit/rename too, and we don't want to yank the user's scroll position
+   back to today every time they make an unrelated edit elsewhere in the
+   grid. Only called on initial load and on explicit month navigation. */
+function scrollToTodayIfCurrentMonth(){
+  const today=new Date();
+  if(curYear!==today.getFullYear()||curMonth!==today.getMonth()) return;
+  const wrap=document.getElementById('cal-wrap');
+  const todayCell=wrap&&wrap.querySelector('td.day-cell.today');
+  if(!wrap||!todayCell) return;
+  const wrapRect=wrap.getBoundingClientRect();
+  const cellRect=todayCell.getBoundingClientRect();
+  const delta=(cellRect.left+cellRect.width/2)-(wrapRect.left+wrapRect.width/2);
+  wrap.scrollLeft+=delta;
+}
+let _syncingScroll=false;
+function mirrorScroll(sourceEl,targets){
+  sourceEl.addEventListener('scroll',function(){
+    if(_syncingScroll)return; _syncingScroll=true;
+    targets.forEach(t=>{ if(t) t.scrollLeft=sourceEl.scrollLeft; });
+    _syncingScroll=false;
+  });
+}
+{
+  const topEl=document.getElementById('cal-top-scroll');
+  const wrapEl=document.getElementById('cal-wrap');
+  const botEl=document.getElementById('cal-bottom-scroll');
+  mirrorScroll(topEl,[wrapEl,botEl]);
+  mirrorScroll(wrapEl,[topEl,botEl]);
+  mirrorScroll(botEl,[topEl,wrapEl]);
 }
 
 function changeMonth(d){
@@ -846,6 +940,7 @@ function changeMonth(d){
   if(curMonth>11){curMonth=0;curYear++;}
   if(curMonth<0){curMonth=11;curYear--;}
   renderCalendar();
+  scrollToTodayIfCurrentMonth();
 }
 
 /* ═══════════════ RESERVATION MODAL ════════════════════════ */
@@ -867,19 +962,21 @@ function openNewRes(roomId,ds){
   document.getElementById('res-title').textContent='Нова резервация';
   document.getElementById('res-del-wrap').style.display='none';
   document.getElementById('res-del-confirm').style.display='none';
+  document.getElementById('res-stale-warning').style.display='none';
   fillRoomSel(roomId);
   document.getElementById('res-name').value='';
   setPickerValue('dp-res-start-wrap',ds);
   setPickerValue('dp-res-end-wrap',ds);
   const room=state.rooms.find(r=>r.id===roomId);
   document.getElementById('res-price').value=room?room.defaultPrice:50;
-  document.getElementById('res-deposit').value='0';
+  document.getElementById('res-deposit').value='50';
   document.getElementById('res-deposit-paid').checked=false;
   document.getElementById('res-notes').value='';
   pickColor(nextColor(roomId));
   updateResPreview();
   document.getElementById('res-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('res-name').focus(),50);
+  silentRefreshIfPossible();
 }
 
 function openEditRes(resId){
@@ -889,6 +986,7 @@ function openEditRes(resId){
   document.getElementById('res-title').textContent='Редактирай резервация';
   document.getElementById('res-del-wrap').style.display='inline-flex';
   document.getElementById('res-del-confirm').style.display='none';
+  document.getElementById('res-stale-warning').style.display='none';
   fillRoomSel(res.roomId);
   document.getElementById('res-room').value=res.roomId;
   document.getElementById('res-name').value=res.guestName;
@@ -901,6 +999,7 @@ function openEditRes(resId){
   pickColor(res.colorId);
   updateResPreview();
   document.getElementById('res-overlay').classList.add('open');
+  silentRefreshIfPossible();
 }
 
 function fillRoomSel(selId){
@@ -910,6 +1009,7 @@ function fillRoomSel(selId){
 
 function closeResModal(){
   document.getElementById('res-overlay').classList.remove('open');
+  document.getElementById('res-stale-warning').style.display='none';
   editingId=null;
 }
 
@@ -931,7 +1031,7 @@ document.getElementById('res-price').addEventListener('input',updateResPreview);
 document.getElementById('res-deposit').addEventListener('input',updateResPreview);
 document.getElementById('res-deposit-paid').addEventListener('change',updateResPreview);
 
-function saveRes(){
+async function saveRes(){
   const roomId=parseInt(document.getElementById('res-room').value);
   const guestName=document.getElementById('res-name').value.trim();
   const startDate=getPickerValue('dp-res-start-wrap');
@@ -956,14 +1056,25 @@ function saveRes(){
   const depositPaid=document.getElementById('res-deposit-paid').checked;
   const entry={id:editingId||uid(),roomId,guestName,startDate,endDate,
     pricePerNight:price,colorId:selColor,notes,deposit,depositPaid};
-  if(editingId){
-    const i=state.reservations.findIndex(r=>r.id===editingId);
-    if(i>-1) state.reservations[i]=entry;
+  const isNew=!editingId;
+
+  const result=await driveVersionedSave(isNew,()=>{
+    if(editingId){
+      const i=state.reservations.findIndex(r=>r.id===editingId);
+      if(i>-1) state.reservations[i]=entry;
+    } else {
+      state.reservations.push(entry);
+    }
+  });
+
+  if(result.ok){
+    renderCalendar();calcRevenue();closeResModal();
+    showToast('Резервацията е запазена ✓');
+  } else if(result.stale){
+    showResStaleWarning();
   } else {
-    state.reservations.push(entry);
+    showToast('Грешка при запис. Опитайте отново.');
   }
-  save();driveUploadAuto();renderCalendar();calcRevenue();closeResModal();
-  showToast('Резервацията е запазена ✓');
 }
 
 function confirmDeleteRes(){
@@ -974,11 +1085,20 @@ function cancelDeleteRes(){
   document.getElementById('res-del-confirm').style.display='none';
   document.getElementById('res-del').style.display='inline-flex';
 }
-function deleteRes(){
+async function deleteRes(){
   if(!editingId) return;
-  state.reservations=state.reservations.filter(r=>r.id!==editingId);
-  save();driveUploadAuto();renderCalendar();calcRevenue();closeResModal();
-  showToast('Резервацията е изтрита');
+  const idToDelete=editingId;
+  const result=await driveVersionedSave(false,()=>{
+    state.reservations=state.reservations.filter(r=>r.id!==idToDelete);
+  });
+  if(result.ok){
+    renderCalendar();calcRevenue();closeResModal();
+    showToast('Резервацията е изтрита');
+  } else if(result.stale){
+    showResStaleWarning();
+  } else {
+    showToast('Грешка при запис. Опитайте отново.');
+  }
 }
 
 function nextColor(roomId){
@@ -993,7 +1113,7 @@ function renderRooms(){
     const gc=GROUP_COLORS[r.group||0];
     return `<div class="room-item" style="border-left:4px solid ${gc.border};background:${gc.bg};">
       <span class="room-num">${r.id+1}.</span>
-      <input type="text" class="room-name-input" value="${escA(r.name)}" id="rn-${r.id}" placeholder="Стая ${r.id+1}">
+      <input type="text" class="room-name-input" value="${escA(r.name)}" id="rn-${r.id}" placeholder="${r.id===10?'A':r.id+1}">
       <div class="price-wrap">
         <input type="number" value="${r.defaultPrice||50}" id="rp-${r.id}" min="0" step="1">
         <span>€/нощ</span>
@@ -1003,21 +1123,39 @@ function renderRooms(){
   document.getElementById('gh-name-input').value=state.guesthouseName;
 }
 
-function saveRooms(){
+async function saveRooms(){
+  const updates=[];
   state.rooms.forEach(r=>{
     const n=document.getElementById(`rn-${r.id}`);
     const p=document.getElementById(`rp-${r.id}`);
-    if(n) r.name=n.value.trim()||`Стая ${r.id+1}`;
-    if(p) r.defaultPrice=parseFloat(p.value)||0;
+    const newName=n?(n.value.trim()||(r.id===10?'A':String(r.id+1))):r.name;
+    const newPrice=p?(parseFloat(p.value)||0):r.defaultPrice;
+    updates.push({r,newName,newPrice});
   });
-  state.settingsModified=Date.now();
-  save();driveUploadAuto();renderCalendar();showToast('Стаите са запазени ✓');
+  const result=await driveVersionedSave(false,()=>{
+    updates.forEach(({r,newName,newPrice})=>{ r.name=newName; r.defaultPrice=newPrice; });
+  });
+  if(result.ok){
+    renderCalendar();showToast('Стаите са запазени ✓');
+  } else if(result.stale){
+    showToast('Имате неотразени промени, актуализирайте.');
+    pullReservationsFromDrive({silent:false});
+  } else {
+    showToast('Грешка при запис. Опитайте отново.');
+  }
 }
 
-function saveGHName(){
-  state.guesthouseName=document.getElementById('gh-name-input').value.trim()||'Морската къща';
-  state.settingsModified=Date.now();
-  updateTitle();save();driveUploadAuto();showToast('Името е запазено ✓');
+async function saveGHName(){
+  const newName=document.getElementById('gh-name-input').value.trim()||'Морската къща';
+  const result=await driveVersionedSave(false,()=>{ state.guesthouseName=newName; updateTitle(); });
+  if(result.ok){
+    showToast('Името е запазено ✓');
+  } else if(result.stale){
+    showToast('Имате неотразени промени, актуализирайте.');
+    pullReservationsFromDrive({silent:false});
+  } else {
+    showToast('Грешка при запис. Опитайте отново.');
+  }
 }
 
 function updateTitle(){
@@ -1025,11 +1163,21 @@ function updateTitle(){
   document.title=state.guesthouseName;
 }
 
-function quickRename(id){
+async function quickRename(id){
   const r=state.rooms.find(x=>x.id===id);
   if(!r) return;
   const n=prompt('Ново име:',r.name);
-  if(n!==null&&n.trim()){r.name=n.trim();save();driveUploadAuto();renderCalendar();renderRooms();calcRevenue();showToast('Преименувано ✓');}
+  if(n===null||!n.trim()) return;
+  const newName=n.trim();
+  const result=await driveVersionedSave(false,()=>{ r.name=newName; });
+  if(result.ok){
+    renderCalendar();renderRooms();calcRevenue();showToast('Преименувано ✓');
+  } else if(result.stale){
+    showToast('Имате неотразени промени, актуализирайте.');
+    pullReservationsFromDrive({silent:false});
+  } else {
+    showToast('Грешка при запис. Опитайте отново.');
+  }
 }
 
 /* ═══════════════ REVENUE ════════════════════════════════════ */
@@ -1092,15 +1240,15 @@ function switchTab(name,el){
 ═══════════════════════════════════════════════════════════ */
 function openDriveModal(){
   document.getElementById('drive-cid').value=state.driveConfig.clientId||'';
-  document.getElementById('drive-fname').value=state.driveConfig.filename||'guesthouse-data.json';
+  document.getElementById('drive-fname').value=state.driveConfig.filename||DEFAULT_DRIVE_FILENAME;
   document.getElementById('drive-overlay').classList.add('open');
 }
 function closeDriveModal(){ document.getElementById('drive-overlay').classList.remove('open'); }
 
 function saveDriveConfig(){
   state.driveConfig.clientId=document.getElementById('drive-cid').value.trim();
-  state.driveConfig.filename=document.getElementById('drive-fname').value.trim()||'guesthouse-data.json';
-  save();closeDriveModal();
+  state.driveConfig.filename=document.getElementById('drive-fname').value.trim()||DEFAULT_DRIVE_FILENAME;
+  save();closeDriveModal();updateVersionBadge();
   if(state.driveConfig.clientId) ensureToken(()=>showToast('Drive свързан ✓'));
 }
 
@@ -1146,62 +1294,51 @@ function ensureToken(cb){
   } else { doAuth(); }
 }
 
-/* driveUploadAuto — called after every save operation silently */
-function driveUploadAuto(){
-  if(!state.driveConfig.clientId) return;
-  ensureToken(async()=>{
-    try{
-      await driveWriteFile();
-      const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
-      updateSyncBar('ok','Запазено в Drive',t);
-    }catch(e){ updateSyncBar('error','Грешка при запис',''); }
-  });
-}
+/* ═══════════════ VERSIONED SYNC ═══════════════════════════
+   Every write to Drive carries a syncVersion counter, stored right in the
+   JSON file. Before writing, we read the file's CURRENT version and compare
+   it to what this device last saw:
+     - Brand new bookings never conflict with anything, so they always go
+       through — we just adopt whatever the current remote version is +1.
+     - Edits/deletes of something that already exists are version-gated: if
+       the remote version doesn't match what we last saw, someone else
+       (or this same device from another tab/session) has moved things on
+       since we last looked, and we refuse the write rather than silently
+       overwrite it.
+   This intentionally does NOT guard the moment between "check" and "write"
+   with any server-side lock (Drive's simple API doesn't offer one) — for a
+   single person switching between two devices sequentially, that's an
+   acceptable, very narrow gap, not a realistic collision window.
+═══════════════════════════════════════════════════════════ */
+function nowTimeStr(){ return new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'}); }
 
-/* driveDownload — manual button, pulls latest reservations from Drive.
-   Only reservations are downloaded — local settings (rooms, name, prices)
-   are always preserved so they never get overwritten by an old Drive file. */
-async function driveDownload(){
-  if(!state.driveConfig.clientId){
-    showToast('Drive не е настроен — отиди в ⚙ Настройки.');
-    return;
-  }
-  hideDownloadBanner();
-  ensureToken(async()=>{
-    updateSyncBar('pending','Изтегляне от Drive...','');
-    try{
-      const search=await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
-        {headers:{'Authorization':'Bearer '+driveToken}});
-      const sd=await search.json();
-      const files=sd.files||[];
-      if(!files.length){ showToast('Няма файл в Drive.'); updateSyncBar('local','Няма данни в Drive',''); return; }
-      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${files[0].id}?alt=media`,
-        {headers:{'Authorization':'Bearer '+driveToken}});
-      if(!r.ok) throw new Error(await r.text());
-      const remote=await r.json();
-      // Only import reservations from Drive — all settings stay local
-      state.reservations=remote.reservations||[];
-      localStorage.setItem('gh_state',JSON.stringify(state));
-      renderCalendar();calcRevenue();
-      const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
-      updateSyncBar('ok','Изтеглено от Drive',t);
-      hideDownloadBanner();
-      showToast('Резервациите са обновени ⬇');
-    }catch(e){ updateSyncBar('error','Грешка при изтегляне',''); showToast('Грешка: '+e.message); }
-  });
-}
-
-async function driveWriteFile(){
+async function driveReadRemote(filename){
   const search=await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${state.driveConfig.filename}'&spaces=drive&fields=files(id)`,
+    `https://www.googleapis.com/drive/v3/files?q=name='${filename}'&spaces=drive&fields=files(id)`,
     {headers:{'Authorization':'Bearer '+driveToken}});
   const sd=await search.json();
   const files=sd.files||[];
-  const fileId=files.length?files[0].id:null;
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  if(!files.length) return {fileId:null,data:null};
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files/${files[0].id}?alt=media`,
+    {headers:{'Authorization':'Bearer '+driveToken}});
+  if(!r.ok) throw new Error(await r.text());
+  const data=await r.json();
+  return {fileId:files[0].id,data};
+}
+
+async function driveWriteFileNamed(filename,payloadObj,knownFileId){
+  let fileId=knownFileId;
+  if(fileId===undefined){
+    const search=await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${filename}'&spaces=drive&fields=files(id)`,
+      {headers:{'Authorization':'Bearer '+driveToken}});
+    const sd=await search.json();
+    const files=sd.files||[];
+    fileId=files.length?files[0].id:null;
+  }
+  const blob=new Blob([JSON.stringify(payloadObj,null,2)],{type:'application/json'});
   const form=new FormData();
-  form.append('metadata',new Blob([JSON.stringify({name:state.driveConfig.filename})],{type:'application/json'}));
+  form.append('metadata',new Blob([JSON.stringify({name:filename})],{type:'application/json'}));
   form.append('file',blob);
   if(fileId){
     const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
@@ -1214,7 +1351,135 @@ async function driveWriteFile(){
   }
 }
 
-function startAutoSync(){ /* intentionally empty — upload on save, download on demand */ }
+async function driveWriteFile(knownFileId){
+  return driveWriteFileNamed(state.driveConfig.filename,state,knownFileId);
+}
+
+/* driveVersionedSave(isNewRecord, applyChange) — the single entry point every
+   save/delete/rename goes through. applyChange() only runs if we're allowed
+   to proceed, so nothing is mutated locally on a blocked attempt.
+   Returns {ok:true} | {ok:false,stale:true} | {ok:false,error:true}. */
+function driveVersionedSave(isNewRecord,applyChange){
+  if(!state.driveConfig.clientId){
+    applyChange();
+    save();
+    return Promise.resolve({ok:true});
+  }
+  return new Promise(resolve=>{
+    ensureToken(async()=>{
+      updateSyncBar('pending','Запазване...','');
+      try{
+        const remote=await driveReadRemote(state.driveConfig.filename);
+        const remoteVersion=(remote.data&&typeof remote.data.syncVersion==='number')?remote.data.syncVersion:0;
+        const localVersion=typeof state.syncVersion==='number'?state.syncVersion:0;
+        if(!isNewRecord && remote.data && remoteVersion!==localVersion){
+          updateSyncBar('error','Неотразени промени','');
+          resolve({ok:false,stale:true});
+          return;
+        }
+        applyChange();
+        state.syncVersion=remoteVersion+1;
+        save();
+        await driveWriteFile(remote.fileId);
+        updateSyncBar('ok','Запазено в Drive',nowTimeStr());
+        updateVersionBadge();
+        maybeRunDailyBackup();
+        resolve({ok:true});
+      }catch(e){
+        updateSyncBar('error','Грешка при запис','');
+        resolve({ok:false,error:true});
+      }
+    });
+  });
+}
+
+/* pullReservationsFromDrive — shared by the manual Свали button, the
+   "sync now" retry inside a blocked save, and the silent background
+   refresh. Only reservations + syncVersion come down; rooms/settings are
+   never overwritten by a pull, same protective rule as always. */
+async function pullReservationsFromDrive({silent}={}){
+  if(!state.driveConfig.clientId) return {ok:false};
+  try{
+    const remote=await driveReadRemote(state.driveConfig.filename);
+    if(!remote.data){
+      if(!silent){ showToast('Няма файл в Drive.'); updateSyncBar('local','Няма данни в Drive',''); }
+      return {ok:false};
+    }
+    state.reservations=remote.data.reservations||[];
+    state.syncVersion=typeof remote.data.syncVersion==='number'?remote.data.syncVersion:0;
+    localStorage.setItem('gh_state',JSON.stringify(state));
+    renderCalendar();calcRevenue();
+    updateVersionBadge();
+    updateSyncBar('ok',silent?'Синхронизирано':'Изтеглено от Drive',nowTimeStr());
+    if(!silent){ hideDownloadBanner(); showToast('Резервациите са обновени ⬇'); }
+    return {ok:true};
+  }catch(e){
+    if(!silent){ updateSyncBar('error','Грешка при изтегляне',''); showToast('Грешка: '+e.message); }
+    return {ok:false,error:e};
+  }
+}
+
+/* driveDownload — manual header/banner button. */
+async function driveDownload(){
+  if(!state.driveConfig.clientId){
+    showToast('Drive не е настроен — отиди в ⚙ Настройки.');
+    return;
+  }
+  hideDownloadBanner();
+  ensureToken(async()=>{
+    updateSyncBar('pending','Изтегляне от Drive...','');
+    await pullReservationsFromDrive({silent:false});
+  });
+}
+
+/* silentRefreshIfPossible — called when a tab regains focus, and right
+   before a booking modal opens. Deliberately does NOT trigger a Google
+   popup if there's no cached token — a background moment isn't a real
+   user click, so browsers would block a popup here anyway. Instead it
+   just surfaces the existing yellow "please sync" banner as a visible
+   nudge, same as the very first unlock of a session already does. */
+function silentRefreshIfPossible(){
+  if(!state.driveConfig.clientId) return;
+  if(!driveToken){ showDownloadBanner(); return; }
+  pullReservationsFromDrive({silent:true});
+}
+
+/* Opportunistic once-a-day backup to a second, "_backup"-suffixed file.
+   Piggybacks on successful saves rather than running on its own schedule —
+   there's no background process in a browser tab to drive a real timer
+   reliably, so "next save after 24h have passed" is the practical trigger. */
+const BACKUP_INTERVAL_MS=24*60*60*1000;
+async function maybeRunDailyBackup(){
+  try{
+    const last=parseInt(localStorage.getItem('gh_last_backup_at')||'0',10);
+    if(Date.now()-last<BACKUP_INTERVAL_MS) return;
+    await driveWriteFileNamed(state.driveConfig.filename+'_backup',state);
+    localStorage.setItem('gh_last_backup_at',String(Date.now()));
+  }catch(e){ /* best-effort only — never blocks or reports on the real save */ }
+}
+
+function showResStaleWarning(){
+  document.getElementById('res-stale-warning').style.display='block';
+}
+function syncBeforeRetry(){
+  document.getElementById('res-stale-warning').style.display='none';
+  ensureToken(async()=>{
+    updateSyncBar('pending','Синхронизиране...','');
+    const r=await pullReservationsFromDrive({silent:false});
+    if(r.ok) showToast('Обновено ✓ Натиснете Запази отново.');
+  });
+}
+function updateVersionBadge(){
+  const el=document.getElementById('sync-version');
+  if(!el) return;
+  el.textContent=state.driveConfig.clientId?('v'+(state.syncVersion||0)):'';
+}
+
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible') silentRefreshIfPossible();
+});
+
+function startAutoSync(){ /* intentionally empty — upload on save, download on demand/focus */ }
 
 
 function updateDriveStatus(){
@@ -1235,7 +1500,7 @@ function updateSyncBar(status,text,time){
 function exportJSON(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
-  a.download='guesthouse-data.json';a.click();
+  a.download='myseahouse-export.json';a.click();
 }
 function importJSON(){ document.getElementById('import-file').click(); }
 function doImport(e){
@@ -1263,8 +1528,48 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-/* Close modals on backdrop click */
-document.getElementById('res-overlay').addEventListener('click',function(e){if(e.target===this)closeResModal();});
+/* ═══════════════ BOOKING HOVER TOOLTIP ═══════════════════════
+   Custom-built tooltip shown on mouse hover over a reservation block.
+   Desktop/mouse only by nature (mouseover doesn't fire on touch) — that's
+   fine, this app is used with a mouse on the desktop side. */
+function showResTooltip(block,e){
+  const tt=document.getElementById('res-tooltip');
+  const name=block.dataset.ttName||'';
+  const notes=block.dataset.ttNotes||'';
+  const deposit=block.dataset.ttDeposit||'';
+  tt.innerHTML=`<div class="tt-name">${esc(name)}${deposit?` <span class="tt-deposit">(${deposit}€)</span>`:''}</div>${notes?`<div class="tt-notes">${esc(notes)}</div>`:''}`;
+  tt.style.display='block';
+  positionResTooltip(tt,e);
+}
+function positionResTooltip(tt,e){
+  const offset=16;
+  let x=e.clientX+offset, y=e.clientY+offset;
+  const rect=tt.getBoundingClientRect();
+  if(x+rect.width>window.innerWidth-8) x=e.clientX-rect.width-offset;
+  if(y+rect.height>window.innerHeight-8) y=e.clientY-rect.height-offset;
+  tt.style.left=Math.max(8,x)+'px';
+  tt.style.top=Math.max(8,y)+'px';
+}
+document.getElementById('cal-body').addEventListener('mouseover',function(e){
+  const block=e.target.closest('.res-block');
+  if(!block) return;
+  showResTooltip(block,e);
+});
+document.getElementById('cal-body').addEventListener('mousemove',function(e){
+  const block=e.target.closest('.res-block');
+  if(!block) return;
+  positionResTooltip(document.getElementById('res-tooltip'),e);
+});
+document.getElementById('cal-body').addEventListener('mouseout',function(e){
+  const block=e.target.closest('.res-block');
+  if(!block) return;
+  if(block.contains(e.relatedTarget)) return;
+  document.getElementById('res-tooltip').style.display='none';
+});
+
+/* Close modal on backdrop click */
+/* Reservation modal: intentionally NOT closed by backdrop click — an accidental
+   click outside was wiping out a half-filled booking form. Use "Отказ" instead. */
 document.getElementById('drive-overlay').addEventListener('click',function(e){if(e.target===this)closeDriveModal();});
 
 /* ═══════════════ DOWNLOAD REMINDER BANNER ══════════════════ */
