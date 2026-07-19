@@ -235,8 +235,29 @@
     font-size:1rem;line-height:1.45;max-width:320px;
     box-shadow:0 6px 20px rgba(0,0,0,.28);}
   .res-tooltip .tt-name{font-weight:700;}
-  .res-tooltip .tt-deposit{font-weight:400;}
+  .res-tooltip .tt-balance{font-weight:400;margin-top:3px;}
   .res-tooltip .tt-notes{font-weight:400;opacity:.85;margin-top:3px;font-size:.9rem;}
+
+  /* PRINTABLE BOOKING REPORT — hidden on screen; when printing, everything
+     else is hidden and only this becomes visible, filling the page. */
+  .print-only{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #print-report,#print-report *{visibility:visible;}
+    #print-report{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;
+      font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;}
+    #print-report h1{font-size:1.3rem;margin-bottom:2px;}
+    #print-report .pr-sub{font-size:.85rem;color:#444;margin-bottom:14px;}
+    #print-report table{width:100%;border-collapse:collapse;font-size:.8rem;}
+    #print-report th,#print-report td{border:1px solid #999;padding:4px 6px;text-align:left;}
+    #print-report thead{display:table-header-group;}
+    #print-report tr{page-break-inside:avoid;}
+    #print-report .pr-total{margin-top:10px;font-size:.85rem;}
+    #print-report .pr-section-break{page-break-before:always;margin-top:0;}
+    #print-report table.pr-revenue{width:300px;}
+    #print-report table.pr-revenue td:last-child,#print-report table.pr-revenue th:last-child{text-align:right;}
+    #print-report tr.pr-tot td{font-weight:700;}
+  }
 
   /* TOAST */
   .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
@@ -406,10 +427,25 @@
     </p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-ghost" onclick="exportJSON()">⬇ Изтегли JSON</button>
+      <button class="btn btn-ghost" onclick="exportPrintableReport()">🖨 Разпечатай / Запази PDF</button>
       <button class="btn btn-ghost" onclick="importJSON()">⬆ Зареди JSON</button>
       <button class="btn btn-danger" onclick="clearAll()">🗑 Изтрий резервации</button>
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+  </div>
+  <div style="margin-top:18px;padding:14px;background:var(--warn-lt);border:1px solid var(--warn);border-radius:var(--radius);">
+    <strong style="font-size:.88rem;display:block;margin-bottom:4px;color:var(--warn);">Пълно нулиране на устройството</strong>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.4;">
+      Изтрива <strong>всичко</strong>, запазено в този браузър — резервации, имена на стаи, цени, име на обекта и Drive настройки. Използвайте само ако искате това устройство да започне напълно отначало. Не засяга други устройства или данните в Google Drive.
+    </p>
+    <div id="reset-all-wrap">
+      <button class="btn btn-danger" id="reset-all-btn" onclick="confirmResetAll()">🔄 Изтрий всички локални данни</button>
+      <div id="reset-all-confirm" style="display:none;margin-top:8px;font-size:.82rem;color:var(--warn);">
+        Сигурни ли сте? Това е необратимо и ще презареди приложението.
+        <button class="btn btn-danger" onclick="doResetAll()" style="padding:4px 10px;margin-left:6px;font-size:.8rem;">Да, изтрий всичко</button>
+        <button class="btn btn-ghost" onclick="cancelResetAll()" style="padding:4px 10px;font-size:.8rem;">Не</button>
+      </div>
+    </div>
   </div>
   <div style="height:50px;"></div>
 </div>
@@ -424,7 +460,7 @@
     </div>
     <div class="form-row">
       <label>Гост</label>
-      <input type="text" id="res-name" placeholder="Иван Иванов">
+      <input type="text" id="res-name">
     </div>
     <div class="form-row">
       <label>Настаняване (вкл.)</label>
@@ -454,7 +490,7 @@
     </div>
     <div class="form-row">
       <label>Бележки</label>
-      <input type="text" id="res-notes" placeholder="напр. 2 възрастни + 1 дете">
+      <input type="text" id="res-notes">
     </div>
     <div id="res-preview" style="font-size:.82rem;color:var(--muted);margin-top:4px;min-height:18px;"></div>
     <div id="res-stale-warning" style="display:none;background:var(--warn-lt);border:1px solid var(--warn);
@@ -508,6 +544,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="print-report" class="print-only"></div>
 <div class="res-tooltip" id="res-tooltip"></div>
 <div class="sync-bar">
   <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-text">Само локално</span><span id="sync-version" style="margin-left:8px;color:var(--muted);"></span></div>
@@ -870,10 +907,12 @@ function renderCalendar(){
           ? `<div class="dep-strip ${res.depositPaid?'paid':'unpaid'}"></div>`
           : '';
         // Show name in every cell for easy reading
+        const nights=daysBetween(parseDate(res.startDate),parseDate(res.endDate));
+        const total=nights*res.pricePerNight;
         inner=`<div class="res-block span-${re.sp}"
           style="background:${c.tHex};color:${c.hex};border-color:${c.hex};"
           onclick="event.stopPropagation();openEditRes('${res.id}')"
-          data-tt-name="${escA(res.guestName)}" data-tt-notes="${escA(res.notes||'')}" data-tt-deposit="${res.deposit>0?res.deposit:''}">
+          data-tt-name="${escA(res.guestName)}" data-tt-notes="${escA(res.notes||'')}" data-tt-deposit="${res.deposit>0?res.deposit:''}" data-tt-paid="${res.depositPaid?'1':''}" data-tt-total="${total}">
           ${depStrip}
           <span class="res-name">${esc(res.guestName)}</span>
         </div>`;
@@ -966,7 +1005,13 @@ function openNewRes(roomId,ds){
   fillRoomSel(roomId);
   document.getElementById('res-name').value='';
   setPickerValue('dp-res-start-wrap',ds);
-  setPickerValue('dp-res-end-wrap',ds);
+  setPickerValue('dp-res-end-wrap','');
+  // Position the end-date calendar's visible month near the start date,
+  // without pre-selecting a day — a booking never ends the same day it starts.
+  if(pickers['dp-res-end-wrap']){
+    const[ey,em]=ds.split('-').map(Number);
+    pickers['dp-res-end-wrap'].popY=ey;pickers['dp-res-end-wrap'].popM=em-1;
+  }
   const room=state.rooms.find(r=>r.id===roomId);
   document.getElementById('res-price').value=room?room.defaultPrice:50;
   document.getElementById('res-deposit').value='50';
@@ -1029,6 +1074,15 @@ function updateResPreview(){
 
 document.getElementById('res-price').addEventListener('input',updateResPreview);
 document.getElementById('res-deposit').addEventListener('input',updateResPreview);
+document.getElementById('res-name').addEventListener('input',function(e){
+  const el=e.target;
+  const pos=el.selectionStart;
+  const capitalized=el.value.replace(/(^|\s)(\p{L})/gu,(m,sep,ch)=>sep+ch.toUpperCase());
+  if(capitalized!==el.value){
+    el.value=capitalized;
+    el.setSelectionRange(pos,pos);
+  }
+});
 document.getElementById('res-deposit-paid').addEventListener('change',updateResPreview);
 
 async function saveRes(){
@@ -1502,6 +1556,56 @@ function exportJSON(){
   a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
   a.download='myseahouse-export.json';a.click();
 }
+
+/* Human-readable backup — builds a print-friendly table of every booking
+   currently in state (all rooms, all dates in the current file) and hands
+   off to the browser's own print dialog, where "Save as PDF" produces an
+   actual PDF with zero extra libraries, or he can print it on paper directly. */
+function exportPrintableReport(){
+  const rows=state.reservations.slice().sort((a,b)=>a.startDate.localeCompare(b.startDate));
+  const roomName=id=>{ const r=state.rooms.find(x=>x.id===id); return r?r.name:id; };
+  let html=`<h1>${esc(state.guesthouseName)}</h1>
+    <div class="pr-sub">Резервации — генерирано на ${new Date().toLocaleDateString('bg-BG')} ${new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'})}</div>
+    <table><thead><tr>
+      <th>Стая</th><th>Гост</th><th>Настаняване</th><th>Напускане</th><th>Нощ.</th>
+      <th>Цена/нощ</th><th>Общо</th><th>Депозит</th><th>Платен</th><th>Бележки</th>
+    </tr></thead><tbody>`;
+  const roomRevenue={};
+  state.rooms.forEach(rm=>{roomRevenue[rm.id]=0;});
+  let grandTotal=0;
+  rows.forEach(r=>{
+    const nights=daysBetween(parseDate(r.startDate),parseDate(r.endDate));
+    const total=nights*r.pricePerNight;
+    roomRevenue[r.roomId]=(roomRevenue[r.roomId]||0)+total;
+    grandTotal+=total;
+    html+=`<tr>
+      <td>${esc(roomName(r.roomId))}</td>
+      <td>${esc(r.guestName)}</td>
+      <td>${fmtDate(r.startDate)}</td>
+      <td>${fmtDate(r.endDate)}</td>
+      <td>${nights}</td>
+      <td>${fmtEuro(r.pricePerNight)}€</td>
+      <td>${fmtEuro(total)}€</td>
+      <td>${r.deposit>0?fmtEuro(r.deposit)+'€':'—'}</td>
+      <td>${r.deposit>0?(r.depositPaid?'Да':'Не'):'—'}</td>
+      <td>${esc(r.notes||'')}</td>
+    </tr>`;
+  });
+  html+=`</tbody></table><div class="pr-total">Общо резервации: ${rows.length}</div>`;
+
+  html+=`<div class="pr-section-break"><h1>Приходи</h1>
+    <div class="pr-sub">По всички резервации в текущия файл (не е ограничено до избран период)</div>
+    <table class="pr-revenue"><thead><tr><th>Стая</th><th>Приход (€)</th></tr></thead><tbody>`;
+  state.rooms.forEach(rm=>{
+    html+=`<tr><td>${esc(rm.name)}</td><td>${fmtEuro(roomRevenue[rm.id]||0)}€</td></tr>`;
+  });
+  html+=`<tr class="pr-tot"><td>Общо</td><td>${fmtEuro(grandTotal)}€</td></tr>`;
+  html+=`</tbody></table></div>`;
+
+  document.getElementById('print-report').innerHTML=html;
+  window.print();
+}
+
 function importJSON(){ document.getElementById('import-file').click(); }
 function doImport(e){
   const file=e.target.files[0];if(!file)return;
@@ -1521,6 +1625,23 @@ function clearAll(){
   showToast('Резервациите са изтрити');
 }
 
+/* Full local reset — wipes this browser's entire stored state (reservations,
+   rooms, guesthouse name, Drive config) and reloads fresh. Only touches this
+   one device's localStorage; Drive itself and any other device are untouched. */
+function confirmResetAll(){
+  document.getElementById('reset-all-confirm').style.display='block';
+  document.getElementById('reset-all-btn').style.display='none';
+}
+function cancelResetAll(){
+  document.getElementById('reset-all-confirm').style.display='none';
+  document.getElementById('reset-all-btn').style.display='inline-flex';
+}
+function doResetAll(){
+  localStorage.removeItem('gh_state');
+  sessionStorage.removeItem('gh_unlocked');
+  location.reload();
+}
+
 /* ═══════════════ TOAST ══════════════════════════════════════ */
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -1532,12 +1653,26 @@ function showToast(msg){
    Custom-built tooltip shown on mouse hover over a reservation block.
    Desktop/mouse only by nature (mouseover doesn't fire on touch) — that's
    fine, this app is used with a mouse on the desktop side. */
+function fmtEuro(n){ return (Math.round(n*100)/100).toString(); }
+
 function showResTooltip(block,e){
   const tt=document.getElementById('res-tooltip');
   const name=block.dataset.ttName||'';
   const notes=block.dataset.ttNotes||'';
-  const deposit=block.dataset.ttDeposit||'';
-  tt.innerHTML=`<div class="tt-name">${esc(name)}${deposit?` <span class="tt-deposit">(${deposit}€)</span>`:''}</div>${notes?`<div class="tt-notes">${esc(notes)}</div>`:''}`;
+  const deposit=parseFloat(block.dataset.ttDeposit)||0;
+  const paid=block.dataset.ttPaid==='1';
+  const total=parseFloat(block.dataset.ttTotal)||0;
+
+  let balanceText;
+  if(deposit>0&&!paid){
+    balanceText=`Остатък: ${fmtEuro(deposit)}€ + ${fmtEuro(total-deposit)}€`;
+  } else {
+    balanceText=`Остатък: ${fmtEuro(deposit>0?total-deposit:total)}€`;
+  }
+
+  tt.innerHTML=`<div class="tt-name">${esc(name)}</div>`+
+    `<div class="tt-balance">${balanceText}</div>`+
+    (notes?`<div class="tt-notes">${esc(notes)}</div>`:'');
   tt.style.display='block';
   positionResTooltip(tt,e);
 }
