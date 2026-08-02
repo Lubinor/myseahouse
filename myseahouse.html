@@ -447,6 +447,7 @@
       </div>
     </div>
   </div>
+  <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:14px;">Версия: <span id="app-version-label"></span></div>
   <div style="height:50px;"></div>
 </div>
 
@@ -549,10 +550,15 @@
 <div class="sync-bar">
   <div><span class="sync-dot local" id="sync-dot"></span><span id="sync-text">Само локално</span><span id="sync-version" style="margin-left:8px;color:var(--muted);"></span></div>
   <span id="sync-time"></span>
+  <span id="app-version-label2" style="margin-left:8px;color:var(--muted);"></span>
 </div>
 
 <script>
 /* ═══════════════ COLORS ════════════════════════════════════ */
+/* Bump this by hand every time a new build is handed off — DDMMYY of the
+   handoff date. Purely a "which version are you actually looking at"
+   troubleshooting aid, unrelated to the Drive syncVersion counter. */
+const APP_VERSION='310726';
 const DEFAULT_DRIVE_FILENAME='myseahouse-data.json';
 const COLORS=[
   {id:0,  hex:'#C62828',tHex:'#FFCDD2'}, // red
@@ -823,6 +829,10 @@ function init(){
   calcRevenue();
   updateDriveStatus();
   updateVersionBadge();
+  const vEl=document.getElementById('app-version-label');
+  if(vEl) vEl.textContent=APP_VERSION;
+  const vEl2=document.getElementById('app-version-label2');
+  if(vEl2) vEl2.textContent='v.'+APP_VERSION;
   startAutoSync();
   // Show download banner after state is loaded, if Drive configured and already past PIN
   if(state.driveConfig.clientId && sessionStorage.getItem('gh_unlocked')==='1'){
@@ -1426,7 +1436,11 @@ function driveVersionedSave(isNewRecord,applyChange){
         const remote=await driveReadRemote(state.driveConfig.filename);
         const remoteVersion=(remote.data&&typeof remote.data.syncVersion==='number')?remote.data.syncVersion:0;
         const localVersion=typeof state.syncVersion==='number'?state.syncVersion:0;
-        if(!isNewRecord && remote.data && remoteVersion!==localVersion){
+        // Every write uploads the ENTIRE reservations list, not a merge — so
+        // even a brand-new booking on a stale (or freshly wiped/empty) local
+        // copy would silently overwrite everything else in Drive. So this
+        // check applies uniformly to creates, edits, and deletes alike.
+        if(remote.data && remoteVersion!==localVersion){
           updateSyncBar('error','Неотразени промени','');
           resolve({ok:false,stale:true});
           return;
@@ -1438,6 +1452,7 @@ function driveVersionedSave(isNewRecord,applyChange){
         updateSyncBar('ok','Запазено в Drive',nowTimeStr());
         updateVersionBadge();
         maybeRunDailyBackup();
+        maybeRunDailyDatedArchive();
         resolve({ok:true});
       }catch(e){
         updateSyncBar('error','Грешка при запис','');
@@ -1509,6 +1524,22 @@ async function maybeRunDailyBackup(){
     if(Date.now()-last<BACKUP_INTERVAL_MS) return;
     await driveWriteFileNamed(state.driveConfig.filename+'_backup',state);
     localStorage.setItem('gh_last_backup_at',String(Date.now()));
+  }catch(e){ /* best-effort only — never blocks or reports on the real save */ }
+}
+
+/* Daily DATED archive — unlike the rolling "_backup" file above (which
+   overwrites itself), this writes a brand-new file each day, named
+   YYYY-MM-DD-<filename>, and never touches previous days' files. Same
+   opportunistic "next save after 24h have passed" trigger as the rolling
+   backup — just kept as an independent timer/key so either one could be
+   disabled without affecting the other. */
+async function maybeRunDailyDatedArchive(){
+  try{
+    const last=parseInt(localStorage.getItem('gh_last_dated_archive_at')||'0',10);
+    if(Date.now()-last<BACKUP_INTERVAL_MS) return;
+    const dateStr=new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    await driveWriteFileNamed(`${dateStr}-${state.driveConfig.filename}`,state);
+    localStorage.setItem('gh_last_dated_archive_at',String(Date.now()));
   }catch(e){ /* best-effort only — never blocks or reports on the real save */ }
 }
 
