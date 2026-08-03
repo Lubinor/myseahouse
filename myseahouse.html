@@ -66,7 +66,7 @@
     font-size:.82rem;font-weight:800;color:var(--text);width:var(--cell-w);min-width:var(--cell-w);
     height:38px;text-align:center;position:sticky;top:0;z-index:10;padding:0;}
   .cal-table thead th.today-hdr{color:var(--accent);background:var(--accent-lt);}
-  .cal-table thead th.wknd-hdr{color:var(--warn);background:#FEF0F0;}
+  .cal-table thead th.wknd-hdr{color:#A66A00;background:#FFF8E1;}
   .cal-table thead th:first-child{width:var(--room-col);min-width:var(--room-col);
     left:0;z-index:20;background:var(--surface);}
   /* bottom repeated header row — rendered as a second tbody for reliability */
@@ -74,7 +74,7 @@
     font-size:.82rem;font-weight:800;color:var(--text);width:var(--cell-w);min-width:var(--cell-w);
     height:38px;text-align:center;position:sticky;bottom:44px;z-index:10;padding:0;}
   #cal-foot th.today-hdr{color:var(--accent);background:var(--accent-lt);}
-  #cal-foot th.wknd-hdr{color:var(--warn);background:#FEF0F0;}
+  #cal-foot th.wknd-hdr{color:#A66A00;background:#FFF8E1;}
   #cal-foot th:first-child{width:var(--room-col);min-width:var(--room-col);
     left:0;z-index:20;background:var(--surface);}
   .cal-table tbody td.room-cell{position:sticky;left:0;z-index:5;
@@ -99,7 +99,7 @@
     padding:0;position:relative;background:var(--surface);}
   .cal-table tbody td.day-cell:hover{filter:brightness(.94);}
   .cal-table tbody td.day-cell.today{outline:2px inset var(--accent);outline-offset:-2px;}
-  .cal-table tbody td.day-cell.weekend{background:#FEF7F7;border-left:2px solid #FBBCBC;border-right:2px solid #FBBCBC;}
+  .cal-table tbody td.day-cell.weekend{background:#FFF8E1;border-left:2px solid #F5D061;border-right:2px solid #F5D061;}
 
   /* RESERVATION BLOCKS */
   .res-block{position:absolute;inset:2px;border-radius:3px;display:flex;align-items:center;
@@ -558,7 +558,7 @@
 /* Bump this by hand every time a new build is handed off — DDMMYY of the
    handoff date. Purely a "which version are you actually looking at"
    troubleshooting aid, unrelated to the Drive syncVersion counter. */
-const APP_VERSION='310726';
+const APP_VERSION='030826';
 const DEFAULT_DRIVE_FILENAME='myseahouse-data.json';
 const COLORS=[
   {id:0,  hex:'#C62828',tHex:'#FFCDD2'}, // red
@@ -609,8 +609,8 @@ const DEF_ROOMS=[
 // Soft pastel group colors — muted enough for dark text, distinct from each other
 const GROUP_COLORS=[
   {bg:'#D6EAF8',border:'#2E86C1'}, // soft blue      — двойни
-  {bg:'#D5F5E3',border:'#1E8449'}, // soft green     — тройни
-  {bg:'#FFEE58',border:'#FBC02D'}, // pure-ish yellow — тройни бокс
+  {bg:'#FFEE58',border:'#FBC02D'}, // pure-ish yellow — тройни
+  {bg:'#D5F5E3',border:'#1E8449'}, // soft green      — тройни бокс
   {bg:'#E8DAEF',border:'#7D3C98'}, // soft purple    — тройка веранда
   {bg:'#FDEBD0',border:'#D68910'}, // soft amber     — четворна
   {bg:'#CFD8DC',border:'#455A64'}, // slate grey     — апартамент (A)
@@ -859,7 +859,7 @@ function renderCalendar(){
   function makeHeaderRow(forThead){
     const T=forThead?'th':'td';
     const hdrStyle=forThead?'':'font-size:.82rem;font-weight:800;text-align:center;height:38px;background:var(--surface);border:1px solid var(--border);padding:0;';
-    const wkStyle=forThead?'':'color:#C0392B;background:#FEF0F0;';
+    const wkStyle=forThead?'':'color:#A66A00;background:#FFF8E1;';
     const todayStyle=forThead?'':'color:var(--accent);background:var(--accent-lt);';
     let h=`<tr><${T} style="${hdrStyle}"></${T}>`;
     for(let d=1;d<=days;d++){
