@@ -272,18 +272,18 @@
   }
 
   /* DOWNLOAD REMINDER BANNER */
-  #download-banner{
+  #gh-sync-notice{
     background:#F59E0B;color:#1A1714;padding:10px 14px;
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     font-size:.85rem;font-weight:600;position:sticky;top:104px;z-index:85;
     border-bottom:2px solid #D97706;
   }
-  #download-banner button{
+  #gh-sync-notice button{
     background:#1A1714;color:#fff;border:none;border-radius:var(--radius);
     padding:7px 14px;font-size:.82rem;font-weight:700;cursor:pointer;
     font-family:var(--font);white-space:nowrap;
   }
-  #download-banner.hidden{display:none;}
+  #gh-sync-notice.hidden{display:none;}
 
   /* PIN LOCK SCREEN */
   #pin-screen{position:fixed;inset:0;background:var(--accent);z-index:9999;
@@ -350,7 +350,7 @@
 </div>
 
 <!-- DOWNLOAD REMINDER BANNER -->
-<div id="download-banner" class="hidden">
+<div id="gh-sync-notice" class="hidden">
   <span>📥 Натисни „Свали" за да получиш последните промени</span>
   <button onclick="bannerDownload()">⬇ Свали сега</button>
 </div>
@@ -558,7 +558,7 @@
 /* Bump this by hand every time a new build is handed off — DDMMYY of the
    handoff date. Purely a "which version are you actually looking at"
    troubleshooting aid, unrelated to the Drive syncVersion counter. */
-const APP_VERSION='030826';
+const APP_VERSION='060826';
 const DEFAULT_DRIVE_FILENAME='myseahouse-data.json';
 const COLORS=[
   {id:0,  hex:'#C62828',tHex:'#FFCDD2'}, // red
@@ -1740,11 +1740,11 @@ document.getElementById('drive-overlay').addEventListener('click',function(e){if
 
 /* ═══════════════ DOWNLOAD REMINDER BANNER ══════════════════ */
 function showDownloadBanner(){
-  const banner=document.getElementById('download-banner');
+  const banner=document.getElementById('gh-sync-notice');
   if(banner) banner.classList.remove('hidden');
 }
 function hideDownloadBanner(){
-  const banner=document.getElementById('download-banner');
+  const banner=document.getElementById('gh-sync-notice');
   if(banner) banner.classList.add('hidden');
 }
 function bannerDownload(){
